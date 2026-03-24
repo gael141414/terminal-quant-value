@@ -8,3 +8,4 @@ textblob
 streamlit-lottie
 google-generativeai
 requests
+edgartools
