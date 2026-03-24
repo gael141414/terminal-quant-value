@@ -1,0 +1,11 @@
+[theme]
+# Tema Oscuro Institucional
+base = "dark"
+primaryColor = "#00C0F2"      # Cian neón para botones y acentos
+backgroundColor = "#0b1426"   # Azul marino muy profundo (Fondo principal)
+secondaryBackgroundColor = "#16243d" # Azul marino más claro (Para menús y tarjetas)
+textColor = "#E0E6ED"         # Blanco hueso para que no canse la vista
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal" # Oculta la barra molesta de arriba de Streamlit
