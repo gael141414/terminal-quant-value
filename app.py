@@ -771,7 +771,11 @@ if res_val:
     col_m1, col_m2, col_m3 = st.columns(3)
     
     # 1. Graham
-    margen_graham = ((precio_actual - v_graham) / v_graham) * 100 if v_graham > 0 else 0
+    # Blindaje contra fallos de red en la nube (NoneType)
+    if isinstance(precio_actual, (int, float)) and isinstance(v_graham, (int, float)) and v_graham > 0:
+        margen_graham = ((precio_actual - v_graham) / v_graham) * 100
+    else:
+        margen_graham = 0
     color_g = "inverse" if margen_graham > 0 else "normal"
     estado_g = "Cara" if margen_graham > 0 else "Barata"
     col_m1.metric("Benjamin Graham (Value)", f"${v_graham:.2f}", f"{estado_g} ({margen_graham:+.1f}%)", delta_color=color_g)
