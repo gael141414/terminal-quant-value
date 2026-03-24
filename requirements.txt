@@ -9,3 +9,4 @@ streamlit-lottie
 google-generativeai
 requests
 edgartools
+matplotlib
