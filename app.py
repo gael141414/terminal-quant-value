@@ -764,7 +764,7 @@ with st.sidebar:
         st.stop() # Detenemos la app aquí para que no cargue nada más
 
     st.markdown("---")
-        st.caption("Terminal v3.0 | Arquitectura Institucional")
+    st.caption("Terminal v3.0 | Arquitectura Institucional")
     
 # 2. CARGA DE DATOS (SILENCIOSA Y PROFESIONAL)
 render_ticker_tape()
