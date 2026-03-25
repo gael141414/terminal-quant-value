@@ -27,7 +27,7 @@ from charts import (
     plot_treemap_competidores, plot_adn_financiero, plot_anillo_puntuacion, plot_frontera_eficiente,
     plot_estacionalidad_quant, plot_grafico_tecnico_pro, plot_termometro_macro, plot_radar_comparativo,
     plot_football_field, plot_termometro_deuda, plot_capital_allocation_waterfall, plot_comparativa_historica,
-    plot_owner_earnings, plot_shareholder_yield_historico, plot_ev_fcf_historico
+    plot_owner_earnings, plot_shareholder_yield_historico, plot_ev_fcf_historico, plot_rotacion_sectorial
 )
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
@@ -176,6 +176,34 @@ def render_ticker_tape():
             </div>
         </div>
     """, unsafe_allow_html=True)
+
+@st.cache_data(ttl=86400) # Se guarda en memoria durante 24 horas
+def analizar_rotacion_sectores():
+    """Descarga el rendimiento de los 11 sectores del S&P 500 usando sus ETFs"""
+    etfs = {
+        '💻 Tecnología': 'XLK', '💊 Salud': 'XLV', '🏦 Finanzas': 'XLF',
+        '🛍️ Cons. Discrecional': 'XLY', '🍞 Cons. Básico': 'XLP', '🛢️ Energía': 'XLE',
+        '🏭 Industriales': 'XLI', '🧱 Materiales': 'XLB', '🏠 Inmobiliario': 'XLRE',
+        '⚡ Utilities': 'XLU', '📡 Comunicaciones': 'XLC'
+    }
+    datos = []
+    for sector, ticker_etf in etfs.items():
+        try:
+            # Descargamos 3 meses de historia de cada ETF
+            hist = yf.Ticker(ticker_etf).history(period="3mo")
+            if len(hist) >= 21: # 21 días laborables = 1 mes
+                p_actual = hist['Close'].iloc[-1]
+                p_1m = hist['Close'].iloc[-21]
+                p_3m = hist['Close'].iloc[0]
+                
+                r_1m = ((p_actual - p_1m) / p_1m) * 100
+                r_3m = ((p_actual - p_3m) / p_3m) * 100
+                
+                datos.append({'Sector': sector, '1 Mes (%)': r_1m, '3 Meses (%)': r_3m})
+        except:
+            continue
+            
+    return pd.DataFrame(datos) if datos else None
 
 # ---------------- DATA LOADER ---------------- #
 @st.cache_data(show_spinner=False)
@@ -782,6 +810,35 @@ else:
     st.error(f"**Riesgo Fundamental Alto:** {ticker_input} obtiene un {nota_final}/100. La máquina detecta posible destrucción de valor. Operar con extrema precaución.")
 
 st.markdown("<br>", unsafe_allow_html=True) # Espacio antes de las pestañas
+
+# ==========================================
+# ESCÁNER MACRO: ROTACIÓN SECTORIAL
+# ==========================================
+with st.expander("🌍 Radar Macro: ¿Dónde está fluyendo el dinero? (Rotación Sectorial)", expanded=False):
+    st.markdown("Los grandes fondos de inversión rotan su capital constantemente. Aquí puedes ver qué sectores están calentándose y cuáles se están quedando atrás.")
+    
+    with st.spinner("Mapeando el mercado global..."):
+        df_sectores = analizar_rotacion_sectores()
+        
+        if df_sectores is not None and not df_sectores.empty:
+            # Separamos en 2 columnas: la tabla y el gráfico
+            col_sec1, col_sec2 = st.columns([1, 1.5])
+            
+            with col_sec1:
+                st.dataframe(
+                    df_sectores.set_index("Sector").style.background_gradient(subset=['1 Mes (%)', '3 Meses (%)'], cmap='RdYlGn'),
+                    height=350,
+                    use_container_width=True
+                )
+            
+            with col_sec2:
+                fig_sectores = plot_rotacion_sectorial(df_sectores)
+                st.plotly_chart(fig_sectores, use_container_width=True)
+                
+            # Damos un insight rápido
+            mejor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector']
+            peor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector']
+            st.info(f"💡 **Insight Macro:** En los últimos 30 días, el capital institucional está rotando agresivamente hacia **{mejor_sector}**, mientras abandona **{peor_sector}**.")
 
 st.subheader(f"⚖️ Triangulación de Valor Intrínseco — {ticker_input}")
 
