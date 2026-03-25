@@ -3,7 +3,7 @@ import numpy as np
 import yfinance as yf
 from income_analyzer import extraer_dato_robusto # ¡Importamos el motor blindado de la Fase 1!
 
-def valorar_empresa(is_df, bs_df, cf_df, ticker_symbol):
+def valorar_empresa(is_df, bs_df, cf_df, ticker_symbol=None):
     if is_df is None or bs_df is None: return None
 
     def obtener_años(df):
