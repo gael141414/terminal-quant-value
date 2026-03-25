@@ -783,6 +783,13 @@ res_cf = analizar_flujo_efectivo(cf_df, is_df)
 res_val = valorar_empresa(is_df, bs_df, cf_df, ticker_input)
 nota_final = calcular_score_buffett(res_is["ratios"], res_bs["ratios"], res_cf["ratios"])
 
+# --- EXTRACCIÓN GLOBAL DE VARIABLES SEGURAS ---
+precio_actual = res_val.get('precio_actual', 0) if res_val else 0
+eps_actual = res_val.get('eps_actual', 0) if res_val else 0
+earnings_yield = res_val.get('earnings_yield', 0) if res_val else 0
+tasa_riesgo = res_val.get('tasa_libre_riesgo', 0) if res_val else 0
+acciones_actuales = res_val.get('acciones_actuales', 0) if res_val else 0
+
 # ==========================================
 # ENRUTADOR DE VISTAS (SPA ROUTER)
 # ==========================================
