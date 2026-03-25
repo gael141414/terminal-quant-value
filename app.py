@@ -1813,15 +1813,23 @@ with st.sidebar:
             nota = nota_final if 'nota_final' in locals() else 'Desconocida'
             fcf_actual = sc_fcf if 'sc_fcf' in locals() else 'Desconocido'
             
+            if 'alertas_detectadas' in locals() and len(alertas_detectadas) > 0:
+                texto_alertas = "\n".join(alertas_detectadas)
+                modo_abogado_diablo = f"\n⚠️ BANDERAS ROJAS DETECTADAS POR EL ESCÁNER:\n{texto_alertas}\n\nINSTRUCCIÓN CRÍTICA: Actúa como el 'Abogado del Diablo' o un inversor bajista (Short Seller). Haz muchísimo énfasis en estas debilidades matemáticas concretas para advertir al usuario de los riesgos reales."
+            else:
+                modo_abogado_diablo = "\n✅ BANDERAS ROJAS: Ninguna grave detectada. El balance está limpio. Puedes ser más optimista en tu análisis."
+
             contexto_oculto = f"""
-            Eres un analista financiero institucional senior. 
+            Eres un analista financiero institucional senior, discípulo de Charlie Munger. 
             El usuario te está preguntando sobre la empresa {ticker_input}.
-            Estos son los datos matemáticos reales que acaba de extraer la terminal:
+            Estos son los datos matemáticos reales de tu Terminal:
             - Buffett Score (Calidad fundamental): {nota}/100
             - Precio de mercado actual: ${p_actual}
             - Flujo de Caja Libre (FCF) del último año: {fcf_actual} Billones.
             
-            Responde de forma muy concisa, profesional, cínica (estilo Wall Street) y basándote SOLO en los datos. 
+            {modo_abogado_diablo}
+            
+            Responde de forma muy concisa, profesional, cínica y basándote SOLO en estos datos. Si la empresa tiene banderas rojas, destrúyela con argumentos.
             Pregunta del usuario: {prompt_usuario}
             """
             
