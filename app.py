@@ -721,42 +721,42 @@ with st.sidebar:
             "🧠 Auditoría Forense"
         ], label_visibility="collapsed")
 
-    # ==========================================
-    # PANTALLA DE INICIO (LANDING PAGE SAAS)
-    # ==========================================
-    if not st.session_state.get('analizado', False):
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        
-        # Dividimos la pantalla: 60% texto a la izquierda, 40% animación a la derecha
-        col_hero_texto, col_hero_anim = st.columns([1.2, 1])
-        
-        with col_hero_texto:
-            st.markdown("<h1 style='font-size: 4.5rem; color: #E0E6ED;'>🦅 Value<span style='color: #00C0F2;'>Quant</span></h1>", unsafe_allow_html=True)
-            st.markdown("<p style='font-size: 1.2rem; color: #8c9bba;'>La terminal institucional para el inversor inteligente.<br>Inteligencia Artificial, Análisis Forense y Cuantitativo en un solo lugar.</p>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<h4 style='color: #00C0F2;'>👈 Introduce un Ticker en el panel lateral para comenzar</h4>", unsafe_allow_html=True)
-            
-        with col_hero_anim:
-            # Cargamos una animación de análisis de datos para rellenar el espacio derecho
-            lottie_landing = load_lottieurl("https://assets1.lottiefiles.com/packages/lf20_1w3l1m2h.json") 
-            if lottie_landing:
-                st_lottie(lottie_landing, height=250, key="landing_anim")
-        
+# ==========================================
+# PANTALLA DE INICIO (LANDING PAGE SAAS)
+# ==========================================
+if not st.session_state.get('analizado', False):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Dividimos la pantalla: 60% texto a la izquierda, 40% animación a la derecha
+    col_hero_texto, col_hero_anim = st.columns([1.2, 1])
+    
+    with col_hero_texto:
+        st.markdown("<h1 style='font-size: 4.5rem; color: #E0E6ED;'>🦅 Value<span style='color: #00C0F2;'>Quant</span></h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.2rem; color: #8c9bba;'>La terminal institucional para el inversor inteligente.<br>Inteligencia Artificial, Análisis Forense y Cuantitativo en un solo lugar.</p>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("---")
+        st.markdown("<h4 style='color: #00C0F2;'>👈 Introduce un Ticker en el panel lateral para comenzar</h4>", unsafe_allow_html=True)
         
-        # Las 3 tarjetas de información debajo
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.info("📊 **Datos Institucionales**\n\nConéctate en tiempo real a la SEC y obtén décadas de historia financiera.")
-        with col2:
-            st.success("🧠 **Inteligencia Artificial**\n\nUn copiloto RAG integrado que audita los balances por ti en milisegundos.")
-        with col3:
-            st.warning("⚠️ **Auditoría Forense**\n\nDetecta quema de caja, deuda tóxica y manipulación contable (Z-Score & M-Score).")
-            
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        render_ticker_tape()
-        st.stop() # Detenemos la app aquí para que no cargue nada más
+    with col_hero_anim:
+        # Cargamos una animación de análisis de datos para rellenar el espacio derecho
+        lottie_landing = load_lottieurl("https://assets1.lottiefiles.com/packages/lf20_1w3l1m2h.json") 
+        if lottie_landing:
+            st_lottie(lottie_landing, height=250, key="landing_anim")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # Las 3 tarjetas de información debajo
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.info("📊 **Datos Institucionales**\n\nConéctate en tiempo real a la SEC y obtén décadas de historia financiera.")
+    with col2:
+        st.success("🧠 **Inteligencia Artificial**\n\nUn copiloto RAG integrado que audita los balances por ti en milisegundos.")
+    with col3:
+        st.warning("⚠️ **Auditoría Forense**\n\nDetecta quema de caja, deuda tóxica y manipulación contable (Z-Score & M-Score).")
+        
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    render_ticker_tape()
+    st.stop() # Detenemos la app aquí para que no cargue nada más
 
     st.markdown("---")
     st.caption("Terminal v3.0 | Arquitectura Institucional")
