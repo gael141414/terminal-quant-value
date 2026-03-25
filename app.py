@@ -942,52 +942,6 @@ elif seccion_actual == "🔎 Análisis Fundamental":
     
     st.markdown("---")
 
-    # --- Fila 3: Matriz de Sensibilidad DCF (Heatmap) ---
-    st.markdown("#### 🗺️ Matriz de Sensibilidad (Precio Seguro)")
-    st.caption("Esta matriz muestra a qué precio deberías comprar la acción dependiendo de si el crecimiento futuro (Eje Y) y la rentabilidad exigida (Eje X) cambian. Las celdas verdes son precios más seguros.")
-    
-    # Generar variaciones de +/- 2% alrededor de lo que el usuario ha puesto en los sliders
-    tasas_desc = [tasa_desc_usr - 2, tasa_desc_usr - 1, tasa_desc_usr, tasa_desc_usr + 1, tasa_desc_usr + 2]
-    crecimientos = [cagr_usr - 2, cagr_usr - 1, cagr_usr, cagr_usr + 1, cagr_usr + 2]
-
-    matriz_precios = []
-    for g in crecimientos:
-        fila = []
-        for d in tasas_desc:
-            eps_f = eps_actual * ((1 + (g / 100)) ** 10)
-            p_f = eps_f * per_asumido
-            v_i = p_f / ((1 + (d / 100)) ** 10)
-            p_c = v_i * (1 - (margen_seguridad_usr / 100))
-            fila.append(p_c)
-        matriz_precios.append(fila)
-
-    fig_hm = go.Figure(data=go.Heatmap(
-        z=matriz_precios,
-        x=[f"{d}%" for d in tasas_desc],
-        y=[f"{g}%" for g in crecimientos],
-        colorscale='RdYlGn', # Rojo (Peligro) a Verde (Seguro)
-        text=[[f"${val:.2f}" for val in fila] for fila in matriz_precios],
-        texttemplate="%{text}",
-        hoverinfo="skip"
-    ))
-    fig_hm.update_layout(
-        xaxis_title="Tasa de Descuento (Retorno Exigido)",
-        yaxis_title="Crecimiento Anual Estimado (CAGR)",
-        height=350,
-        margin=dict(l=40, r=40, t=20, b=40)
-    )
-    st.plotly_chart(fig_hm, use_container_width=True)
-    st.markdown("---")
-
-    st.markdown("#### Football Field Chart")
-    fig_ff = plot_football_field(ticker_input, precio_actual, res_val)
-    
-    if fig_ff:
-        st.plotly_chart(fig_ff, use_container_width=True)
-    else:
-        st.info("No se pudo generar el gráfico Football Field por falta de datos suficientes (ej. EPS negativo o fallo en Yahoo Finance).")
-    st.markdown("---")
-
     # --- Fila 4: Análisis DuPont (Calidad del ROE) ---
     st.markdown("#### 🔬 Análisis DuPont: Desmontando el ROE")
     st.caption("Charlie Munger dice: 'Un ROE alto es inútil si se logra a base de deudas'. Aquí vemos de dónde viene realmente el ROE del último año.")
@@ -1447,6 +1401,52 @@ elif seccion_actual == "🔎 Análisis Fundamental":
             st.error(f"Error en el cálculo del Reverse DCF: {e}")
     else:
         st.info("Se necesita un Precio de Mercado actual y un EPS positivo para realizar la ingeniería inversa.")
+
+    # ====== Matriz de Sensibilidad DCF (Heatmap) =======
+    st.markdown("#### 🗺️ Matriz de Sensibilidad (Precio Seguro)")
+    st.caption("Esta matriz muestra a qué precio deberías comprar la acción dependiendo de si el crecimiento futuro (Eje Y) y la rentabilidad exigida (Eje X) cambian. Las celdas verdes son precios más seguros.")
+    
+    # Generar variaciones de +/- 2% alrededor de lo que el usuario ha puesto en los sliders
+    tasas_desc = [tasa_desc_usr - 2, tasa_desc_usr - 1, tasa_desc_usr, tasa_desc_usr + 1, tasa_desc_usr + 2]
+    crecimientos = [cagr_usr - 2, cagr_usr - 1, cagr_usr, cagr_usr + 1, cagr_usr + 2]
+
+    matriz_precios = []
+    for g in crecimientos:
+        fila = []
+        for d in tasas_desc:
+            eps_f = eps_actual * ((1 + (g / 100)) ** 10)
+            p_f = eps_f * per_asumido
+            v_i = p_f / ((1 + (d / 100)) ** 10)
+            p_c = v_i * (1 - (margen_seguridad_usr / 100))
+            fila.append(p_c)
+        matriz_precios.append(fila)
+
+    fig_hm = go.Figure(data=go.Heatmap(
+        z=matriz_precios,
+        x=[f"{d}%" for d in tasas_desc],
+        y=[f"{g}%" for g in crecimientos],
+        colorscale='RdYlGn', # Rojo (Peligro) a Verde (Seguro)
+        text=[[f"${val:.2f}" for val in fila] for fila in matriz_precios],
+        texttemplate="%{text}",
+        hoverinfo="skip"
+    ))
+    fig_hm.update_layout(
+        xaxis_title="Tasa de Descuento (Retorno Exigido)",
+        yaxis_title="Crecimiento Anual Estimado (CAGR)",
+        height=350,
+        margin=dict(l=40, r=40, t=20, b=40)
+    )
+    st.plotly_chart(fig_hm, use_container_width=True)
+    st.markdown("---")
+
+    st.markdown("#### Football Field Chart")
+    fig_ff = plot_football_field(ticker_input, precio_actual, res_val)
+
+    if fig_ff:
+        st.plotly_chart(fig_ff, use_container_width=True)
+    else:
+        st.info("No se pudo generar el gráfico Football Field...")
+    st.markdown("---")
 
     # ======== TAB 8 ========
     st.markdown("### 💸 Estrategia de Dividendos Crecientes (DGI)")
