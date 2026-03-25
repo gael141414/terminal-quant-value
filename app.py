@@ -721,18 +721,51 @@ with st.sidebar:
     años_hist = st.slider("Años históricos", 5, 20, 10)
     
     st.markdown("<br>", unsafe_allow_html=True)
+    # Botón de análisis
     ejecutar = st.button("🚀 ANALIZAR TERMINAL", use_container_width=True)
+    
+    # 1. GESTIÓN DEL ESTADO (MEMORIA)
+    if ejecutar and ticker_input:
+        st.session_state['analizado'] = True
+        st.session_state['ticker_actual'] = ticker_input
+
+    # 2. MENÚ DE NAVEGACIÓN (Solo aparece si ya hemos analizado)
+    if st.session_state.get('analizado', False):
+        st.markdown("---")
+        st.markdown("<h4 style='color: #8c9bba;'>🧭 Navegación</h4>", unsafe_allow_html=True)
+        seccion_actual = st.radio("Ir a:", [
+            "📊 Resumen Ejecutivo",
+            "🔎 Análisis Fundamental",
+            "📈 Técnico y Opciones",
+            "🌍 Radar Macro y Sectores",
+            "🧠 Auditoría Forense"
+        ], label_visibility="collapsed")
+
+    # ==========================================
+    # PANTALLA DE INICIO (LANDING PAGE SAAS)
+    # ==========================================
+    if not st.session_state.get('analizado', False):
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; font-size: 4.5rem; color: #E0E6ED;'>🦅 Value<span style='color: #00C0F2;'>Quant</span></h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-size: 1.2rem; color: #8c9bba;'>La terminal institucional para el inversor inteligente. IA, Análisis Forense y Cuantitativo en un solo lugar.</p>", unsafe_allow_html=True)
+        st.markdown("---")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.info("📊 **Datos Institucionales**\n\nConéctate en tiempo real a la SEC y obtén décadas de historia financiera.")
+        with col2:
+            st.success("🧠 **Inteligencia Artificial**\n\nUn copiloto RAG integrado que audita los balances por ti en milisegundos.")
+        with col3:
+            st.warning("⚠️ **Auditoría Forense**\n\nDetecta quema de caja, deuda tóxica y manipulación contable (Z-Score & M-Score).")
+            
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: #00C0F2;'>👈 Introduce un Ticker en el panel lateral para comenzar</h4>", unsafe_allow_html=True)
+        render_ticker_tape()
+        st.stop() # Detenemos la app aquí para que no cargue nada más
 
     st.markdown("---")
-    st.caption("Terminal v3.0 | Arquitectura Institucional")
-
-    # Si el usuario no ha pulsado el botón, detenemos la app aquí para una portada limpia
-    if not ejecutar and not ticker_input:
-        st.title("🦅 Terminal de Inversión Quant")
-        render_ticker_tape()
-        st.info("👈 Introduce un ticker en el panel lateral y pulsa 'Analizar Terminal' para comenzar.")
-        st.stop()
-
+        st.caption("Terminal v3.0 | Arquitectura Institucional")
+    
 # 2. CARGA DE DATOS (SILENCIOSA Y PROFESIONAL)
 render_ticker_tape()
 
@@ -750,211 +783,6 @@ res_cf = analizar_flujo_efectivo(cf_df, is_df)
 res_val = valorar_empresa(is_df, bs_df, cf_df, ticker_input)
 nota_final = calcular_score_buffett(res_is["ratios"], res_bs["ratios"], res_cf["ratios"])
 
-# ==========================================
-# HERO SECTION & SCORECARD EJECUTIVO
-# ==========================================
-precio_mercado = res_val.get('precio_actual', 0) if res_val else 0
-
-col_hero1, col_hero2, col_hero3 = st.columns([2, 1, 1])
-
-with col_hero1:
-    st.markdown(f"<h1 style='font-size: 3.5rem; margin-bottom: 0px;'>{ticker_input}</h1>", unsafe_allow_html=True)
-    st.caption("Value Intelligence Terminal | Análisis Cuantitativo")
-
-with col_hero2:
-    st.metric("Precio de Mercado", f"${precio_mercado:.2f}" if precio_mercado else "N/A")
-
-with col_hero3:
-    fig_score_hero = plot_anillo_puntuacion(nota_final, 100, "Buffett Score (Calidad)", "#00C0F2")
-    st.plotly_chart(fig_score_hero, use_container_width=True)
-
-st.markdown("#### 📊 Scorecard Ejecutivo")
-
-# Función auxiliar rápida para el scorecard
-def get_last(df, col):
-    if df is not None and col in df.columns:
-        s = df[col].dropna()
-        return s.iloc[-1] if not s.empty else None
-    return None
-
-sc_roe = get_last(res_bs["ratios"], "ROE %")
-sc_roic = get_last(res_bs["ratios"], "ROIC %")
-sc_fcf = get_last(res_cf["ratios"], "Free Cash Flow (B USD)")
-sc_deuda = get_last(res_bs["ratios"], "Deuda / Capital")
-
-sc1, sc2, sc3, sc4 = st.columns(4)
-sc1.metric("ROE (Rentabilidad)", f"{sc_roe:.1f}%" if sc_roe else "N/A", "Aprobado" if sc_roe and sc_roe > 15 else "Bajo")
-sc2.metric("ROIC (Calidad)", f"{sc_roic:.1f}%" if sc_roic else "N/A", "Aprobado" if sc_roic and sc_roic > 15 else "Bajo")
-sc3.metric("FCF Último Año", f"${sc_fcf:.1f}B" if sc_fcf else "N/A", "Genera Caja" if sc_fcf and sc_fcf > 0 else "Quema Caja")
-sc4.metric("Deuda / Capital", f"{sc_deuda:.2f}x" if sc_deuda else "N/A", "Sano" if sc_deuda and sc_deuda < 0.8 else "Peligro", delta_color="inverse")
-
-st.markdown("---")
-
-# ==========================================
-# CONCLUSIÓN EJECUTIVA (NARRATIVA)
-# ==========================================
-if res_val and precio_mercado:
-    v_justo = res_val.get('graham_value', 0) # Usamos Graham como base rápida
-    margen_seguridad = ((precio_mercado - v_justo) / v_justo) * 100 if v_justo > 0 else 0
-    estado_precio = "Infravalorada (Descuento)" if margen_seguridad < 0 else "Sobrevalorada (Prima)"
-else:
-    estado_precio = "Datos insuficientes"
-
-st.subheader("🧠 Veredicto del Algoritmo")
-
-if nota_final >= 80:
-    st.success(f"**Negocio de Clase Mundial:** {ticker_input} obtiene un {nota_final}/100. Muestra un foso económico inquebrantable y alta rentabilidad. Actualmente cotiza en un estado de **{estado_precio}**.")
-elif nota_final >= 50:
-    st.warning(f"**Negocio Promedio/Cíclico:** {ticker_input} obtiene un {nota_final}/100. Tiene puntos fuertes pero presenta debilidades estructurales (ej. deuda o márgenes bajos). Estado actual: **{estado_precio}**.")
-else:
-    st.error(f"**Riesgo Fundamental Alto:** {ticker_input} obtiene un {nota_final}/100. La máquina detecta posible destrucción de valor. Operar con extrema precaución.")
-
-st.markdown("<br>", unsafe_allow_html=True) # Espacio antes de las pestañas
-
-# ==========================================
-# ESCÁNER MACRO: ROTACIÓN SECTORIAL
-# ==========================================
-with st.expander("🌍 Radar Macro: ¿Dónde está fluyendo el dinero? (Rotación Sectorial)", expanded=False):
-    st.markdown("Los grandes fondos de inversión rotan su capital constantemente. Aquí puedes ver qué sectores están calentándose y cuáles se están quedando atrás.")
-    
-    with st.spinner("Mapeando el mercado global..."):
-        df_sectores = analizar_rotacion_sectores()
-        
-        if df_sectores is not None and not df_sectores.empty:
-            # Separamos en 2 columnas: la tabla y el gráfico
-            col_sec1, col_sec2 = st.columns([1, 1.5])
-            
-            with col_sec1:
-                st.dataframe(
-                    df_sectores.set_index("Sector").style.background_gradient(subset=['1 Mes (%)', '3 Meses (%)'], cmap='RdYlGn'),
-                    height=350,
-                    use_container_width=True
-                )
-            
-            with col_sec2:
-                fig_sectores = plot_rotacion_sectorial(df_sectores)
-                st.plotly_chart(fig_sectores, use_container_width=True)
-                
-            # Damos un insight rápido
-            mejor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector']
-            peor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector']
-            st.info(f"💡 **Insight Macro:** En los últimos 30 días, el capital institucional está rotando agresivamente hacia **{mejor_sector}**, mientras abandona **{peor_sector}**.")
-
-st.subheader(f"⚖️ Triangulación de Valor Intrínseco — {ticker_input}")
-
-if res_val:
-    precio_actual = res_val.get('precio_actual')
-    eps_actual = res_val.get('eps_actual', 0)
-
-    earnings_yield = res_val.get('earnings_yield', 0)
-    tasa_riesgo = res_val.get('tasa_libre_riesgo', 0)
-    
-    # Extracción de Modelos
-    v_graham = res_val.get('graham_value', 0)
-    v_lynch = res_val.get('lynch_value', 0)
-    v_epv = res_val.get('epv_value', 0)
-    
-    # --- SECCIÓN 1: MODELOS MATEMÁTICOS ESTÁTICOS ---
-    st.markdown("#### 🏛️ Modelos Institucionales (Suelo y Techo)")
-    st.caption("Diferentes metodologías de inversión aplicadas a los beneficios actuales de la empresa.")
-    
-    col_m1, col_m2, col_m3 = st.columns(3)
-    
-    # 1. Graham
-    # Blindaje contra fallos de red en la nube (NoneType)
-    if isinstance(precio_actual, (int, float)) and isinstance(v_graham, (int, float)) and v_graham > 0:
-        margen_graham = ((precio_actual - v_graham) / v_graham) * 100
-    else:
-        margen_graham = 0
-    color_g = "inverse" if margen_graham > 0 else "normal"
-    estado_g = "Cara" if margen_graham > 0 else "Barata"
-    col_m1.metric("Benjamin Graham (Value)", f"${v_graham:.2f}", f"{estado_g} ({margen_graham:+.1f}%)", delta_color=color_g)
-    col_m1.caption("Combina beneficios y crecimiento ajustado a los bonos del tesoro actuales.")
-    
-    # 2. Peter Lynch
-    margen_lynch = ((precio_actual - v_lynch) / v_lynch) * 100 if v_lynch > 0 else 0
-    color_l = "inverse" if margen_lynch > 0 else "normal"
-    estado_l = "Cara" if margen_lynch > 0 else "Barata"
-    col_m2.metric("Peter Lynch (Crecimiento)", f"${v_lynch:.2f}", f"{estado_l} ({margen_lynch:+.1f}%)", delta_color=color_l)
-    col_m2.caption("Asume que el PER justo de una empresa debería ser igual a su crecimiento (PEG=1).")
-    
-    # 3. EPV
-    margen_epv = ((precio_actual - v_epv) / v_epv) * 100 if v_epv > 0 else 0
-    col_m3.metric("EPV (Cero Crecimiento)", f"${v_epv:.2f}")
-    col_m3.caption(f"Valor 'suelo'. Lo que vale la empresa si sus beneficios se estancan y no vuelve a crecer nunca más.")
-
-    st.markdown("---")
-
-    # --- SECCIÓN 2: TU MODELO DCF INTERACTIVO ---
-    st.markdown("#### 🎛️ Tu Modelo DCF (Flujos de Caja Descontados)")
-    st.caption("Crea tu propio escenario. Los valores por defecto han sido calculados por nuestro algoritmo.")
-    
-    col_slider1, col_slider2, col_slider3 = st.columns(3)
-    
-    with col_slider1:
-        g_sugerido = res_val.get('crecimiento_sostenible', 0.05) * 100
-        cagr_usr = st.slider("Crecimiento Anual Estimado %", min_value=1.0, max_value=25.0, value=float(g_sugerido), step=0.5)
-        
-    with col_slider2:
-        wacc_sugerido = res_val.get('tasa_descuento_capm', 0.10) * 100
-        tasa_desc_usr = st.slider("Tasa de Descuento (CAPM) %", min_value=5.0, max_value=20.0, value=float(wacc_sugerido), step=0.5)
-        
-    with col_slider3:
-        margen_seguridad_usr = st.slider("Margen de Seguridad %", min_value=0, max_value=50, value=25, step=5)
-
-    # Cálculo de tu DCF Personalizado
-    per_asumido = res_val.get('per_asumido', 15)
-    eps_futuro = eps_actual * ((1 + (cagr_usr / 100)) ** 10)
-    precio_futuro = eps_futuro * per_asumido
-    v_dcf = precio_futuro / ((1 + (tasa_desc_usr / 100)) ** 10)
-    precio_compra = v_dcf * (1 - (margen_seguridad_usr / 100))
-
-    c1, c2, c3 = st.columns(3)
-
-    if precio_actual:
-        descuento_dcf = ((precio_actual - v_dcf) / v_dcf) * 100
-        estado_valor = "Sobrevalorada" if descuento_dcf > 0 else "Infravalorada"
-        color_valor = "inverse" if descuento_dcf > 0 else "normal"
-        c1.metric("Precio de Mercado Hoy", f"${precio_actual:.2f}", f"{estado_valor} ({descuento_dcf:+.1f}%)", delta_color=color_valor)
-    else:
-        c1.metric("Precio de Mercado", "No disp.")
-        
-    c2.metric("Valor Justo (Tu DCF)", f"${v_dcf:.2f}")
-    c3.metric(f"Precio Seguro (-{margen_seguridad_usr}%)", f"${precio_compra:.2f}")
-
-    st.markdown("#### 🧠 Reverse DCF: ¿Qué crecimiento asume el mercado hoy?")
-    st.caption("En lugar de adivinar el futuro, calculamos qué crecimiento anual (CAGR) exige el precio actual de la acción para justificar su cotización en bolsa.")
-
-    if precio_actual and eps_actual > 0:
-        try:
-            r = tasa_desc_usr / 100
-            base = (precio_actual * ((1 + r) ** 10)) / (eps_actual * per_asumido)
-            if base > 0:
-                implied_g = (base ** 0.1) - 1
-                implied_g_pct = implied_g * 100
-                
-                c_rev1, c_rev2 = st.columns([1, 2])
-                
-                color_delta = "inverse" if implied_g_pct > cagr_usr else "normal"
-                c_rev1.metric(
-                    "Crecimiento Implícito (Priced In)", 
-                    f"{implied_g_pct:.2f}%", 
-                    f"vs {cagr_usr:.2f}% (Tu estimación)", 
-                    delta_color=color_delta
-                )
-                
-                if implied_g_pct > cagr_usr:
-                    c_rev2.error(f"⚠️ **Sobrevaloración probable:** El mercado ya está asumiendo que la empresa crecerá al **{implied_g_pct:.2f}%** anual durante 10 años. Si tú crees que solo crecerá al **{cagr_usr:.2f}%**, la acción está cara hoy.")
-                else:
-                    c_rev2.success(f"✅ **Margen de seguridad:** El mercado es pesimista y solo le exige crecer al **{implied_g_pct:.2f}%**. Como tú estimas un crecimiento del **{cagr_usr:.2f}%**, estás comprando barato.")
-            else:
-                st.info("Matemáticamente imposible calcular el Reverse DCF (Base negativa).")
-        except Exception as e:
-            st.error(f"Error en el cálculo del Reverse DCF: {e}")
-    else:
-        st.info("Se necesita un Precio de Mercado actual y un EPS positivo para realizar la ingeniería inversa.")
-    
-    st.markdown("---")
 
     st.markdown("#### ⚖️ Test de Coste de Oportunidad (Buffett)")
     c4, c5, c6 = st.columns(3)
@@ -1196,35 +1024,92 @@ else:
     st.warning("Datos insuficientes para realizar el modelo de valoración.")
 
 # ==========================================
-# ESCÁNER FORENSE DE VULNERABILIDADES
+# ENRUTADOR DE VISTAS (SPA ROUTER)
 # ==========================================
-st.markdown("### 🔎 Auditoría de Puntos Débiles (Bear Case)")
+if seccion_actual == "📊 Resumen Ejecutivo":
+    # Mueve aquí:
+    # 1. Tu Scorecard (ROE, ROIC, Deuda)
+    # 2. El Veredicto Narrativo de la IA
+    # 3. El Escáner Forense de Vulnerabilidades (El Abogado del Diablo)
 
-alertas_detectadas = escanear_vulnerabilidades(res_is, res_bs, res_cf)
+    # ======== HERO SECTION & SCORECARD ========
+    precio_mercado = res_val.get('precio_actual', 0) if res_val else 0
 
-if len(alertas_detectadas) == 0:
-    st.success("✅ **Foso Económico Intacto:** El escáner no ha detectado vulnerabilidades estructurales graves a nivel contable en el último año.")
-else:
-    st.error(f"Se han detectado **{len(alertas_detectadas)} vulnerabilidades críticas** que debes investigar:")
-    for alerta in alertas_detectadas:
-        st.markdown(f"- {alerta}")
+    col_hero1, col_hero2, col_hero3 = st.columns([2, 1, 1])
+    
+    with col_hero1:
+        st.markdown(f"<h1 style='font-size: 3.5rem; margin-bottom: 0px;'>{ticker_input}</h1>", unsafe_allow_html=True)
+        st.caption("Value Intelligence Terminal | Análisis Cuantitativo")
+    
+    with col_hero2:
+        st.metric("Precio de Mercado", f"${precio_mercado:.2f}" if precio_mercado else "N/A")
+    
+    with col_hero3:
+        fig_score_hero = plot_anillo_puntuacion(nota_final, 100, "Buffett Score (Calidad)", "#00C0F2")
+        st.plotly_chart(fig_score_hero, use_container_width=True)
+    
+    st.markdown("#### 📊 Scorecard Ejecutivo")
+    
+    # Función auxiliar rápida para el scorecard
+    def get_last(df, col):
+        if df is not None and col in df.columns:
+            s = df[col].dropna()
+            return s.iloc[-1] if not s.empty else None
+        return None
+    
+    sc_roe = get_last(res_bs["ratios"], "ROE %")
+    sc_roic = get_last(res_bs["ratios"], "ROIC %")
+    sc_fcf = get_last(res_cf["ratios"], "Free Cash Flow (B USD)")
+    sc_deuda = get_last(res_bs["ratios"], "Deuda / Capital")
+    
+    sc1, sc2, sc3, sc4 = st.columns(4)
+    sc1.metric("ROE (Rentabilidad)", f"{sc_roe:.1f}%" if sc_roe else "N/A", "Aprobado" if sc_roe and sc_roe > 15 else "Bajo")
+    sc2.metric("ROIC (Calidad)", f"{sc_roic:.1f}%" if sc_roic else "N/A", "Aprobado" if sc_roic and sc_roic > 15 else "Bajo")
+    sc3.metric("FCF Último Año", f"${sc_fcf:.1f}B" if sc_fcf else "N/A", "Genera Caja" if sc_fcf and sc_fcf > 0 else "Quema Caja")
+    sc4.metric("Deuda / Capital", f"{sc_deuda:.2f}x" if sc_deuda else "N/A", "Sano" if sc_deuda and sc_deuda < 0.8 else "Peligro", delta_color="inverse")
 
-st.markdown("<br>", unsafe_allow_html=True)
+    # ======== VEREDICTO ========
+    if res_val and precio_mercado:
+        v_justo = res_val.get('graham_value', 0) # Usamos Graham como base rápida
+        margen_seguridad = ((precio_mercado - v_justo) / v_justo) * 100 if v_justo > 0 else 0
+        estado_precio = "Infravalorada (Descuento)" if margen_seguridad < 0 else "Sobrevalorada (Prima)"
+    else:
+        estado_precio = "Datos insuficientes"
+    
+    st.subheader("🧠 Veredicto del Algoritmo")
+    
+    if nota_final >= 80:
+        st.success(f"**Negocio de Clase Mundial:** {ticker_input} obtiene un {nota_final}/100. Muestra un foso económico inquebrantable y alta rentabilidad. Actualmente cotiza en un estado de **{estado_precio}**.")
+    elif nota_final >= 50:
+        st.warning(f"**Negocio Promedio/Cíclico:** {ticker_input} obtiene un {nota_final}/100. Tiene puntos fuertes pero presenta debilidades estructurales (ej. deuda o márgenes bajos). Estado actual: **{estado_precio}**.")
+    else:
+        st.error(f"**Riesgo Fundamental Alto:** {ticker_input} obtiene un {nota_final}/100. La máquina detecta posible destrucción de valor. Operar con extrema precaución.")
+    
+    st.markdown("<br>", unsafe_allow_html=True) # Espacio antes de las pestañas
 
-# --- PESTAÑAS INFERIORES ---
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
-    "📊 Dashboard Visual",
-    "📝 Fundamental y Valoración", 
-    "🥊 Comparador de Pares",
-    "👔 Piel en el Juego & Riesgos", 
-    "📈 Técnico y Momentum",
-    "🤖 Wall Street Analyst", 
-    "🌍 Entorno Macro",
-    "💸 Dividendos (DGI)", 
-    "🎲 Casino (Estacionalidad)"
-])
+    # ======== VULNERABILIDADES ========
+    st.markdown("### 🔎 Auditoría de Puntos Débiles (Bear Case)")
+    
+    alertas_detectadas = escanear_vulnerabilidades(res_is, res_bs, res_cf)
+    
+    if len(alertas_detectadas) == 0:
+        st.success("✅ **Foso Económico Intacto:** El escáner no ha detectado vulnerabilidades estructurales graves a nivel contable en el último año.")
+    else:
+        st.error(f"Se han detectado **{len(alertas_detectadas)} vulnerabilidades críticas** que debes investigar:")
+        for alerta in alertas_detectadas:
+            st.markdown(f"- {alerta}")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    pass # Borra el pass y pon tu código
 
-with tab1:
+elif seccion_actual == "🔎 Análisis Fundamental":
+    # Mueve aquí:
+    # 1. Todo lo que tenías en tab1, tab2, tab3 (Dashboard, Ratios, ADN)
+    # 2. Modelos de Valoración (Graham, DCF)
+
+
+    # ======== TAB 1 ========
     fig = plot_dashboard_interactivo(
         res_is["ratios"],
         res_bs["ratios"],
@@ -1289,7 +1174,7 @@ with tab1:
     if fig_calidad:
         st.plotly_chart(fig_calidad, use_container_width=True)
 
-with tab2:
+    # ======== TAB 2 ========
     st.markdown("### 📝 Calidad Fundamental y ADN Financiero")
     
     # --- CÁLCULO RÁPIDO DE PIOTROSPI PARA EL ANILLO ---
@@ -1392,8 +1277,8 @@ with tab2:
         mime="text/csv",
         type="primary"
     )
-    
-with tab3:
+
+    # ======== TAB 3 ========
     if ticker_competidor:
         with st.spinner(f"Descargando informes de la SEC para el competidor {ticker_competidor}..."):
             is_df2, bs_df2, cf_df2 = cargar_datos(ticker_competidor, 10)
@@ -1470,7 +1355,202 @@ with tab3:
     else:
         st.info("🥊 **El Ring está vacío.** Introduce un ticker rival en el panel lateral (Ej: 'MSFT', 'PEP', 'AMD') para activar la batalla de calidad empresarial.")
 
-with tab4:
+    # ======== MODELOS DE VALORACIÓN ========
+    st.subheader(f"⚖️ Triangulación de Valor Intrínseco — {ticker_input}")
+
+    if res_val:
+        precio_actual = res_val.get('precio_actual')
+        eps_actual = res_val.get('eps_actual', 0)
+    
+        earnings_yield = res_val.get('earnings_yield', 0)
+        tasa_riesgo = res_val.get('tasa_libre_riesgo', 0)
+        
+        # Extracción de Modelos
+        v_graham = res_val.get('graham_value', 0)
+        v_lynch = res_val.get('lynch_value', 0)
+        v_epv = res_val.get('epv_value', 0)
+        
+        # --- SECCIÓN 1: MODELOS MATEMÁTICOS ESTÁTICOS ---
+        st.markdown("#### 🏛️ Modelos Institucionales (Suelo y Techo)")
+        st.caption("Diferentes metodologías de inversión aplicadas a los beneficios actuales de la empresa.")
+        
+        col_m1, col_m2, col_m3 = st.columns(3)
+        
+        # 1. Graham
+        # Blindaje contra fallos de red en la nube (NoneType)
+        if isinstance(precio_actual, (int, float)) and isinstance(v_graham, (int, float)) and v_graham > 0:
+            margen_graham = ((precio_actual - v_graham) / v_graham) * 100
+        else:
+            margen_graham = 0
+        color_g = "inverse" if margen_graham > 0 else "normal"
+        estado_g = "Cara" if margen_graham > 0 else "Barata"
+        col_m1.metric("Benjamin Graham (Value)", f"${v_graham:.2f}", f"{estado_g} ({margen_graham:+.1f}%)", delta_color=color_g)
+        col_m1.caption("Combina beneficios y crecimiento ajustado a los bonos del tesoro actuales.")
+        
+        # 2. Peter Lynch
+        margen_lynch = ((precio_actual - v_lynch) / v_lynch) * 100 if v_lynch > 0 else 0
+        color_l = "inverse" if margen_lynch > 0 else "normal"
+        estado_l = "Cara" if margen_lynch > 0 else "Barata"
+        col_m2.metric("Peter Lynch (Crecimiento)", f"${v_lynch:.2f}", f"{estado_l} ({margen_lynch:+.1f}%)", delta_color=color_l)
+        col_m2.caption("Asume que el PER justo de una empresa debería ser igual a su crecimiento (PEG=1).")
+        
+        # 3. EPV
+        margen_epv = ((precio_actual - v_epv) / v_epv) * 100 if v_epv > 0 else 0
+        col_m3.metric("EPV (Cero Crecimiento)", f"${v_epv:.2f}")
+        col_m3.caption(f"Valor 'suelo'. Lo que vale la empresa si sus beneficios se estancan y no vuelve a crecer nunca más.")
+
+    st.markdown("#### 🎛️ Tu Modelo DCF (Flujos de Caja Descontados)")
+    st.caption("Crea tu propio escenario. Los valores por defecto han sido calculados por nuestro algoritmo.")
+    
+    col_slider1, col_slider2, col_slider3 = st.columns(3)
+    
+    with col_slider1:
+        g_sugerido = res_val.get('crecimiento_sostenible', 0.05) * 100
+        cagr_usr = st.slider("Crecimiento Anual Estimado %", min_value=1.0, max_value=25.0, value=float(g_sugerido), step=0.5)
+        
+    with col_slider2:
+        wacc_sugerido = res_val.get('tasa_descuento_capm', 0.10) * 100
+        tasa_desc_usr = st.slider("Tasa de Descuento (CAPM) %", min_value=5.0, max_value=20.0, value=float(wacc_sugerido), step=0.5)
+        
+    with col_slider3:
+        margen_seguridad_usr = st.slider("Margen de Seguridad %", min_value=0, max_value=50, value=25, step=5)
+
+    # Cálculo de tu DCF Personalizado
+    per_asumido = res_val.get('per_asumido', 15)
+    eps_futuro = eps_actual * ((1 + (cagr_usr / 100)) ** 10)
+    precio_futuro = eps_futuro * per_asumido
+    v_dcf = precio_futuro / ((1 + (tasa_desc_usr / 100)) ** 10)
+    precio_compra = v_dcf * (1 - (margen_seguridad_usr / 100))
+
+    c1, c2, c3 = st.columns(3)
+
+    if precio_actual:
+        descuento_dcf = ((precio_actual - v_dcf) / v_dcf) * 100
+        estado_valor = "Sobrevalorada" if descuento_dcf > 0 else "Infravalorada"
+        color_valor = "inverse" if descuento_dcf > 0 else "normal"
+        c1.metric("Precio de Mercado Hoy", f"${precio_actual:.2f}", f"{estado_valor} ({descuento_dcf:+.1f}%)", delta_color=color_valor)
+    else:
+        c1.metric("Precio de Mercado", "No disp.")
+        
+    c2.metric("Valor Justo (Tu DCF)", f"${v_dcf:.2f}")
+    c3.metric(f"Precio Seguro (-{margen_seguridad_usr}%)", f"${precio_compra:.2f}")
+
+    st.markdown("#### 🧠 Reverse DCF: ¿Qué crecimiento asume el mercado hoy?")
+    st.caption("En lugar de adivinar el futuro, calculamos qué crecimiento anual (CAGR) exige el precio actual de la acción para justificar su cotización en bolsa.")
+
+    if precio_actual and eps_actual > 0:
+        try:
+            r = tasa_desc_usr / 100
+            base = (precio_actual * ((1 + r) ** 10)) / (eps_actual * per_asumido)
+            if base > 0:
+                implied_g = (base ** 0.1) - 1
+                implied_g_pct = implied_g * 100
+                
+                c_rev1, c_rev2 = st.columns([1, 2])
+                
+                color_delta = "inverse" if implied_g_pct > cagr_usr else "normal"
+                c_rev1.metric(
+                    "Crecimiento Implícito (Priced In)", 
+                    f"{implied_g_pct:.2f}%", 
+                    f"vs {cagr_usr:.2f}% (Tu estimación)", 
+                    delta_color=color_delta
+                )
+                
+                if implied_g_pct > cagr_usr:
+                    c_rev2.error(f"⚠️ **Sobrevaloración probable:** El mercado ya está asumiendo que la empresa crecerá al **{implied_g_pct:.2f}%** anual durante 10 años. Si tú crees que solo crecerá al **{cagr_usr:.2f}%**, la acción está cara hoy.")
+                else:
+                    c_rev2.success(f"✅ **Margen de seguridad:** El mercado es pesimista y solo le exige crecer al **{implied_g_pct:.2f}%**. Como tú estimas un crecimiento del **{cagr_usr:.2f}%**, estás comprando barato.")
+            else:
+                st.info("Matemáticamente imposible calcular el Reverse DCF (Base negativa).")
+        except Exception as e:
+            st.error(f"Error en el cálculo del Reverse DCF: {e}")
+    else:
+        st.info("Se necesita un Precio de Mercado actual y un EPS positivo para realizar la ingeniería inversa.")
+    pass
+
+elif seccion_actual == "📈 Técnico y Opciones":
+    # Mueve aquí:
+    # 1. Tu terminal de TradingView (Pestaña 5)
+    # 2. El gráfico de Opciones (Miedo/Codicia)
+    # 3. La Pestaña 4 (Insiders y Piel en el juego)
+
+    # ======== TAB 5 ========
+    st.markdown("### 🏆 Las Mejores Empresas del Mercado (Buffett Ranking)")
+    st.caption("Esta lista se genera automáticamente analizando cientos de empresas mediante el script `screener.py` en segundo plano.")
+    
+    try:
+        # Leemos la base de datos que generó el bot
+        df_ranking = pd.read_csv("ranking_mercado.csv")
+        
+        # Mostramos el podio visual (Top 3)
+        st.markdown("#### 🥇 El Podio Actual")
+        podio1, podio2, podio3 = st.columns(3)
+        
+        if len(df_ranking) >= 3:
+            top1 = df_ranking.iloc[0]
+            top2 = df_ranking.iloc[1]
+            top3 = df_ranking.iloc[2]
+            
+            podio1.metric(f"🥇 1º - {top1['Ticker']}", f"Score: {top1['Buffett Score']}/100", f"ROE: {top1['ROE %']}%")
+            podio2.metric(f"🥈 2º - {top2['Ticker']}", f"Score: {top2['Buffett Score']}/100", f"ROE: {top2['ROE %']}%")
+            podio3.metric(f"🥉 3º - {top3['Ticker']}", f"Score: {top3['Buffett Score']}/100", f"ROE: {top3['ROE %']}%")
+        
+        st.markdown("---")
+        st.markdown("#### 📋 Ranking Completo (Top Oportunidades)")
+        
+        # Damos formato bonito a la tabla
+        st.dataframe(
+            df_ranking.style.background_gradient(subset=['Buffett Score'], cmap='Greens')
+                            .background_gradient(subset=['ROE %'], cmap='Blues')
+                            .format(precision=2),
+            use_container_width=True,
+            height=400
+        )
+        
+        st.info("💡 **Tip:** Para actualizar esta lista con las 500 empresas del S&P 500, edita el archivo `screener.py`, añade todos los tickers, y ejecútalo en tu terminal con `python screener.py`.")
+        
+    except FileNotFoundError:
+        st.warning("⚠️ Todavía no hay datos del mercado. Abre tu terminal de comandos y ejecuta `python screener.py` para analizar el mercado y generar la base de datos.")
+
+    st.markdown("---")
+    st.markdown("#### 🕵️ El Rastro del Dinero: Mercado de Derivados (Opciones)")
+    st.caption("Los inversores minoristas compran acciones. Los inversores institucionales compran opciones (Calls para apostar al alza, Puts para apostar a la baja o protegerse). Este gráfico suma todos los contratos abiertos para el próximo trimestre.")
+    
+    with st.spinner("Descargando la cadena de derivados de Wall Street..."):
+        fig_opciones, diag_opciones = plot_flujo_opciones(ticker_input)
+        
+        if fig_opciones:
+            c_opt1, c_opt2 = st.columns([1.5, 1])
+            
+            with c_opt1:
+                st.markdown("#### 📈 Terminal Técnico (TradingView Pro)")
+                render_tradingview_widget(ticker_input)
+                
+            with c_opt2:
+                st.markdown("#### 🕵️ El Rastro del Dinero (Opciones)")
+                st.plotly_chart(fig_opciones, use_container_width=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                if "CODICIA" in diag_opciones:
+                    st.success(diag_opciones)
+                elif "MIEDO" in diag_opciones:
+                    st.error(diag_opciones)
+                else:
+                    st.info(diag_opciones)
+                    
+                st.markdown("""
+                **💡 Leyenda del Analista:**
+                *   **Calls > Puts:** Mercado fuertemente alcista.
+                *   **Puts > Calls (P/C > 1):** Mercado asustado.
+                *   *Nota contrarian:* Si el P/C es absurdamente alto (ej. > 1.5), a veces indica un "pánico injustificado" y marca el suelo perfecto para comprar.
+                """)
+        else:
+            st.warning(diag_opciones)
+
+    # ======== MIEDO Y CODICIA ========
+
+
+    # ======== TAB 4 ========
     st.markdown("#### 👔 Análisis de la Directiva y Sentimiento del Mercado")
     st.caption("A Buffett le gusta invertir en empresas donde los directivos son dueños de gran parte de las acciones (Skin in the Game).")
     
@@ -1617,81 +1697,70 @@ with tab4:
                     st.markdown(f"- **{noti['Sentimiento']}** | [{noti['Titular']}]({noti['Link']}) *(Vía {noti['Fuente']})*")
         else:
             st.info("No se encontraron noticias recientes en inglés para procesar el sentimiento.")
-
-with tab5:
-    st.markdown("### 🏆 Las Mejores Empresas del Mercado (Buffett Ranking)")
-    st.caption("Esta lista se genera automáticamente analizando cientos de empresas mediante el script `screener.py` en segundo plano.")
     
-    try:
-        # Leemos la base de datos que generó el bot
-        df_ranking = pd.read_csv("ranking_mercado.csv")
-        
-        # Mostramos el podio visual (Top 3)
-        st.markdown("#### 🥇 El Podio Actual")
-        podio1, podio2, podio3 = st.columns(3)
-        
-        if len(df_ranking) >= 3:
-            top1 = df_ranking.iloc[0]
-            top2 = df_ranking.iloc[1]
-            top3 = df_ranking.iloc[2]
-            
-            podio1.metric(f"🥇 1º - {top1['Ticker']}", f"Score: {top1['Buffett Score']}/100", f"ROE: {top1['ROE %']}%")
-            podio2.metric(f"🥈 2º - {top2['Ticker']}", f"Score: {top2['Buffett Score']}/100", f"ROE: {top2['ROE %']}%")
-            podio3.metric(f"🥉 3º - {top3['Ticker']}", f"Score: {top3['Buffett Score']}/100", f"ROE: {top3['ROE %']}%")
-        
-        st.markdown("---")
-        st.markdown("#### 📋 Ranking Completo (Top Oportunidades)")
-        
-        # Damos formato bonito a la tabla
-        st.dataframe(
-            df_ranking.style.background_gradient(subset=['Buffett Score'], cmap='Greens')
-                            .background_gradient(subset=['ROE %'], cmap='Blues')
-                            .format(precision=2),
-            use_container_width=True,
-            height=400
-        )
-        
-        st.info("💡 **Tip:** Para actualizar esta lista con las 500 empresas del S&P 500, edita el archivo `screener.py`, añade todos los tickers, y ejecútalo en tu terminal con `python screener.py`.")
-        
-    except FileNotFoundError:
-        st.warning("⚠️ Todavía no hay datos del mercado. Abre tu terminal de comandos y ejecuta `python screener.py` para analizar el mercado y generar la base de datos.")
+    pass
 
-    st.markdown("---")
-    st.markdown("#### 🕵️ El Rastro del Dinero: Mercado de Derivados (Opciones)")
-    st.caption("Los inversores minoristas compran acciones. Los inversores institucionales compran opciones (Calls para apostar al alza, Puts para apostar a la baja o protegerse). Este gráfico suma todos los contratos abiertos para el próximo trimestre.")
-    
-    with st.spinner("Descargando la cadena de derivados de Wall Street..."):
-        fig_opciones, diag_opciones = plot_flujo_opciones(ticker_input)
+elif seccion_actual == "🌍 Radar Macro y Sectores":
+    # Mueve aquí:
+    # 1. Tu nuevo Radar de Rotación Sectorial
+    # 2. La Pestaña 9 (Estacionalidad Cuantitativa)
+
+    # ======== RADAR ROTACIÓN SECTORIAL ========
+    with st.expander("🌍 Radar Macro: ¿Dónde está fluyendo el dinero? (Rotación Sectorial)", expanded=False):
+        st.markdown("Los grandes fondos de inversión rotan su capital constantemente. Aquí puedes ver qué sectores están calentándose y cuáles se están quedando atrás.")
         
-        if fig_opciones:
-            c_opt1, c_opt2 = st.columns([1.5, 1])
+        with st.spinner("Mapeando el mercado global..."):
+            df_sectores = analizar_rotacion_sectores()
             
-            with c_opt1:
-                st.markdown("#### 📈 Terminal Técnico (TradingView Pro)")
-                render_tradingview_widget(ticker_input)
+            if df_sectores is not None and not df_sectores.empty:
+                # Separamos en 2 columnas: la tabla y el gráfico
+                col_sec1, col_sec2 = st.columns([1, 1.5])
                 
-            with c_opt2:
-                st.markdown("#### 🕵️ El Rastro del Dinero (Opciones)")
-                st.plotly_chart(fig_opciones, use_container_width=True)
-                st.markdown("<br>", unsafe_allow_html=True)
+                with col_sec1:
+                    st.dataframe(
+                        df_sectores.set_index("Sector").style.background_gradient(subset=['1 Mes (%)', '3 Meses (%)'], cmap='RdYlGn'),
+                        height=350,
+                        use_container_width=True
+                    )
                 
-                if "CODICIA" in diag_opciones:
-                    st.success(diag_opciones)
-                elif "MIEDO" in diag_opciones:
-                    st.error(diag_opciones)
-                else:
-                    st.info(diag_opciones)
+                with col_sec2:
+                    fig_sectores = plot_rotacion_sectorial(df_sectores)
+                    st.plotly_chart(fig_sectores, use_container_width=True)
                     
-                st.markdown("""
-                **💡 Leyenda del Analista:**
-                *   **Calls > Puts:** Mercado fuertemente alcista.
-                *   **Puts > Calls (P/C > 1):** Mercado asustado.
-                *   *Nota contrarian:* Si el P/C es absurdamente alto (ej. > 1.5), a veces indica un "pánico injustificado" y marca el suelo perfecto para comprar.
-                """)
-        else:
-            st.warning(diag_opciones)
+                # Damos un insight rápido
+                mejor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector']
+                peor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector']
+                st.info(f"💡 **Insight Macro:** En los últimos 30 días, el capital institucional está rotando agresivamente hacia **{mejor_sector}**, mientras abandona **{peor_sector}**.")
 
-with tab6:
+    # ======== TAB 9 ========
+    st.markdown("### 🎲 Probabilidad y Estacionalidad (Los últimos 20 años)")
+    st.caption("Los fondos Quant no adivinan, cuentan cartas. Este mapa de calor analiza la historia completa de la acción para decirte en qué meses tienes las probabilidades matemáticas a tu favor.")
+    
+    with st.spinner(f"Procesando miles de velas históricas de {ticker_input}..."):
+        fig_estacional, diagnostico_estacional = plot_estacionalidad_quant(ticker_input)
+        
+        if fig_estacional:
+            st.plotly_chart(fig_estacional, use_container_width=True)
+            st.info(diagnostico_estacional)
+            
+            st.markdown("---")
+            st.markdown("""
+            **💡 ¿Cómo usar esta ventaja injusta?**
+            *   **Barras Verdes (>60%):** En estos meses, jugar a la baja (cortos) es un suicidio estadístico.
+            *   **Barras Rojas (<40%):** Meses de purga. Es el momento perfecto para guardar liquidez y cazar chollos a final de mes.
+            *   *Ejemplo clásico:* Muchas tecnológicas (como Apple) sufren en Septiembre y vuelan en Octubre/Noviembre tras presentar resultados.
+            """)
+        else:
+            st.warning(diagnostico_estacional)
+    pass
+
+elif seccion_actual == "🧠 Auditoría Forense":
+    # Mueve aquí:
+    # 1. Pestaña 6 y 7 (Z-Score, Beneish M-Score)
+    # 2. Calidad de Beneficios
+
+
+    # ======== TAB 6 ========
     st.markdown("### ⚖️ Laboratorio Quant: Optimización de Cartera")
     st.caption("Introduce al menos 3 tickers separados por comas. El algoritmo simulará 2,000 combinaciones para encontrar los pesos exactos que maximizan tu rentabilidad y minimizan la volatilidad (Modelo Markowitz).")
     
@@ -1723,7 +1792,9 @@ with tab6:
                                 st.write(f"**{tick}:** {peso}%")
                                 st.progress(peso / 100)
 
-with tab7:
+
+
+    # ======== TAB 7 ========
     st.markdown("### 🌍 Visión Macro Institucional")
     st.caption("Analizando el flujo del 'Smart Money'. Los grandes fondos no miran las noticias, miran cómo se mueve el capital entre activos refugio y activos de riesgo.")
     
@@ -1801,7 +1872,7 @@ with tab7:
         else:
             st.error(f"🚨 Fallo técnico detectado:\n\n{diagnostico_macro}")
 
-with tab8:
+    # ======== TAB 8 ========
     st.markdown("### 💸 Estrategia de Dividendos Crecientes (DGI)")
     st.caption("No mires el dividendo actual, mira el futuro. El *Yield on Cost* (Rentabilidad sobre Coste) te dice cuánto dinero te pagará la empresa anualmente respecto a lo que pagaste por ella el día que la compraste.")
     
@@ -1816,27 +1887,7 @@ with tab8:
                 st.info(texto_dgi) # Muestra el mensaje de error si la empresa no paga dividendo
     else:
         st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")
-
-with tab9:
-    st.markdown("### 🎲 Probabilidad y Estacionalidad (Los últimos 20 años)")
-    st.caption("Los fondos Quant no adivinan, cuentan cartas. Este mapa de calor analiza la historia completa de la acción para decirte en qué meses tienes las probabilidades matemáticas a tu favor.")
-    
-    with st.spinner(f"Procesando miles de velas históricas de {ticker_input}..."):
-        fig_estacional, diagnostico_estacional = plot_estacionalidad_quant(ticker_input)
-        
-        if fig_estacional:
-            st.plotly_chart(fig_estacional, use_container_width=True)
-            st.info(diagnostico_estacional)
-            
-            st.markdown("---")
-            st.markdown("""
-            **💡 ¿Cómo usar esta ventaja injusta?**
-            *   **Barras Verdes (>60%):** En estos meses, jugar a la baja (cortos) es un suicidio estadístico.
-            *   **Barras Rojas (<40%):** Meses de purga. Es el momento perfecto para guardar liquidez y cazar chollos a final de mes.
-            *   *Ejemplo clásico:* Muchas tecnológicas (como Apple) sufren en Septiembre y vuelan en Octubre/Noviembre tras presentar resultados.
-            """)
-        else:
-            st.warning(diagnostico_estacional)
+    pass
 
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
