@@ -1870,23 +1870,32 @@ with st.sidebar:
             nota = nota_final if 'nota_final' in locals() else 'Desconocida'
             fcf_actual = sc_fcf if 'sc_fcf' in locals() else 'Desconocido'
             
+            # 1. Recuperamos el contexto de Rotación Sectorial
+            contexto_macro = ""
+            if 'df_sectores' in locals() and df_sectores is not None and not df_sectores.empty:
+                mejor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector']
+                peor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector']
+                contexto_macro = f"- Flujo de Capital (Macro): En los últimos 30 días, los grandes fondos están comprando masivamente {mejor_sec} y abandonando {peor_sec}."
+
+            # 2. Preparamos el informe forense (Abogado del Diablo)
             if 'alertas_detectadas' in locals() and len(alertas_detectadas) > 0:
                 texto_alertas = "\n".join(alertas_detectadas)
-                modo_abogado_diablo = f"\n⚠️ BANDERAS ROJAS DETECTADAS POR EL ESCÁNER:\n{texto_alertas}\n\nINSTRUCCIÓN CRÍTICA: Actúa como el 'Abogado del Diablo' o un inversor bajista (Short Seller). Haz muchísimo énfasis en estas debilidades matemáticas concretas para advertir al usuario de los riesgos reales."
+                modo_abogado_diablo = f"\n⚠️ BANDERAS ROJAS DETECTADAS:\n{texto_alertas}\n\nINSTRUCCIÓN CRÍTICA: Eres un inversor bajista (Short Seller). Destruye la tesis de inversión usando estas banderas rojas y advierte al usuario si el sector macro no acompaña."
             else:
-                modo_abogado_diablo = "\n✅ BANDERAS ROJAS: Ninguna grave detectada. El balance está limpio. Puedes ser más optimista en tu análisis."
+                modo_abogado_diablo = "\n✅ BANDERAS ROJAS: Ninguna grave detectada. Balance limpio. Puedes ser más optimista, pero evalúa siempre el contexto macro."
 
+            # 3. Ensamblamos la mente de la IA
             contexto_oculto = f"""
-            Eres un analista financiero institucional senior, discípulo de Charlie Munger. 
-            El usuario te está preguntando sobre la empresa {ticker_input}.
-            Estos son los datos matemáticos reales de tu Terminal:
-            - Buffett Score (Calidad fundamental): {nota}/100
-            - Precio de mercado actual: ${p_actual}
-            - Flujo de Caja Libre (FCF) del último año: {fcf_actual} Billones.
+            Eres un gestor de fondos cuantitativo senior. 
+            Analizas la empresa {ticker_input} basándote ESTRICTAMENTE en estos datos de tu Terminal:
+            - Buffett Score (Calidad): {nota}/100
+            - Precio actual: ${p_actual}
+            - Free Cash Flow: {fcf_actual} Billones.
+            {contexto_macro}
             
             {modo_abogado_diablo}
             
-            Responde de forma muy concisa, profesional, cínica y basándote SOLO en estos datos. Si la empresa tiene banderas rojas, destrúyela con argumentos.
+            Responde de forma implacable, profesional y muy directa. Si el sector de la empresa está entre los perdedores, menciónalo como un viento en contra.
             Pregunta del usuario: {prompt_usuario}
             """
             
