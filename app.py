@@ -125,57 +125,37 @@ aplicar_estilos_premium()
 # ==========================================
 # WIDGET RADICAL: TICKER TAPE ANIMADO
 # ==========================================
+@st.cache_data(ttl=3600) # Se actualiza cada 1 hora para no saturar la API
+def obtener_datos_ticker_tape():
+    indices = {"S&P 500": "^GSPC", "NASDAQ": "^IXIC", "DOW": "^DJI", "VIX": "^VIX", "ORO": "GC=F", "PETRÓLEO": "CL=F"}
+    items = []
+    for nombre, ticker in indices.items():
+        try:
+            data = yf.Ticker(ticker).history(period="2d")
+            if len(data) >= 2:
+                change = ((data["Close"].iloc[-1] - data["Close"].iloc[-2]) / data["Close"].iloc[-2]) * 100
+                clase = "positivo" if change > 0 else "negativo"
+                simbolo = "▲" if change > 0 else "▼"
+                items.append(f'<div class="ticker-item">{nombre} <span class="{clase}">{simbolo} {change:.2f}%</span></div>')
+        except:
+            continue
+    return ''.join(items)
+
 def render_ticker_tape():
-    st.markdown("""
-        <style>
-        .ticker-wrap {
-            width: 100%;
-            background-color: #0b1426;
-            border-top: 1px solid #1e3354;
-            border-bottom: 1px solid #1e3354;
-            padding: 8px 0;
-            overflow: hidden;
-            white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-        }
-        .ticker {
-            display: inline-block;
-            white-space: nowrap;
-            padding-right: 100%;
-            animation: ticker 30s linear infinite;
-        }
-        .ticker:hover {
-            animation-play-state: paused;
-        }
-        .ticker-item {
-            display: inline-block;
-            padding: 0 2rem;
-            font-size: 1.1rem;
-            color: #E0E6ED;
-            font-weight: 600;
-        }
-        .positivo { color: #00ff88; text-shadow: 0 0 5px rgba(0,255,136,0.5); }
-        .negativo { color: #ff0055; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
-        
-        @keyframes ticker {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
-        </style>
-        <div class="ticker-wrap">
-            <div class="ticker">
-                <div class="ticker-item">S&P 500 <span class="positivo">▲ +1.24%</span></div>
-                <div class="ticker-item">NASDAQ <span class="positivo">▲ +1.85%</span></div>
-                <div class="ticker-item">DOW JONES <span class="negativo">▼ -0.45%</span></div>
-                <div class="ticker-item">VIX <span class="negativo">▼ -4.20%</span></div>
-                <div class="ticker-item">ORO <span class="positivo">▲ +0.80%</span></div>
-                <div class="ticker-item">BITCOIN <span class="positivo">▲ +3.40%</span></div>
-                <div class="ticker-item">PETRÓLEO <span class="negativo">▼ -1.10%</span></div>
-                <div class="ticker-item">EUR/USD <span class="positivo">▲ +0.15%</span></div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    items_html = obtener_datos_ticker_tape()
+    html = f"""
+    <style>
+    .ticker-wrap {{ width: 100%; background-color: #0b1426; border-top: 1px solid #1e3354; border-bottom: 1px solid #1e3354; padding: 8px 0; overflow: hidden; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 20px; }}
+    .ticker {{ display: inline-block; white-space: nowrap; padding-right: 100%; animation: ticker 30s linear infinite; }}
+    .ticker:hover {{ animation-play-state: paused; }}
+    .ticker-item {{ display: inline-block; padding: 0 2rem; font-size: 1.1rem; color: #E0E6ED; font-weight: 600; }}
+    .positivo {{ color: #00ff88; text-shadow: 0 0 5px rgba(0,255,136,0.5); }}
+    .negativo {{ color: #ff0055; text-shadow: 0 0 5px rgba(255,0,85,0.5); }}
+    @keyframes ticker {{ 0% {{ transform: translate3d(0, 0, 0); }} 100% {{ transform: translate3d(-100%, 0, 0); }} }}
+    </style>
+    <div class="ticker-wrap"><div class="ticker">{items_html}</div></div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 @st.cache_data(ttl=86400) # Se guarda en memoria durante 24 horas
 def analizar_rotacion_sectores():
