@@ -1351,3 +1351,33 @@ def plot_ev_fcf_historico(ticker, df_bs, df_cf, acciones_actuales):
     except Exception as e:
         st.error(f"Error generando gráfico EV/FCF: {e}")
         return None
+
+def plot_rotacion_sectorial(df_sectores):
+    """Crea un gráfico de barras horizontales con el rendimiento de los sectores"""
+    import plotly.graph_objects as go
+    
+    # Ordenamos de peor a mejor para que el mejor salga arriba del todo en el gráfico
+    df_sorted = df_sectores.sort_values(by="1 Mes (%)", ascending=True)
+    
+    # Pintamos de verde los ganadores y de rojo los perdedores
+    colores = ['#d62728' if val < 0 else '#2ca02c' for val in df_sorted["1 Mes (%)"]]
+    
+    fig = go.Figure(go.Bar(
+        x=df_sorted["1 Mes (%)"],
+        y=df_sorted["Sector"],
+        orientation='h',
+        marker_color=colores,
+        text=[f"{val:.2f}%" for val in df_sorted["1 Mes (%)"]],
+        textposition='auto'
+    ))
+    
+    fig.update_layout(
+        title="🌡️ Temperatura Sectorial (Últimos 30 Días)",
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E0E6ED'),
+        margin=dict(l=20, r=20, t=40, b=20),
+        xaxis=dict(showgrid=True, gridcolor='#1e3354', title="Rendimiento Mensual (%)"),
+        yaxis=dict(showgrid=False)
+    )
+    return fig
