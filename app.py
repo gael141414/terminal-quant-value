@@ -783,7 +783,92 @@ res_cf = analizar_flujo_efectivo(cf_df, is_df)
 res_val = valorar_empresa(is_df, bs_df, cf_df, ticker_input)
 nota_final = calcular_score_buffett(res_is["ratios"], res_bs["ratios"], res_cf["ratios"])
 
+# ==========================================
+# ENRUTADOR DE VISTAS (SPA ROUTER)
+# ==========================================
+if seccion_actual == "📊 Resumen Ejecutivo":
+    # Mueve aquí:
+    # 1. Tu Scorecard (ROE, ROIC, Deuda)
+    # 2. El Veredicto Narrativo de la IA
+    # 3. El Escáner Forense de Vulnerabilidades (El Abogado del Diablo)
 
+    # ======== HERO SECTION & SCORECARD ========
+    precio_mercado = res_val.get('precio_actual', 0) if res_val else 0
+
+    col_hero1, col_hero2, col_hero3 = st.columns([2, 1, 1])
+    
+    with col_hero1:
+        st.markdown(f"<h1 style='font-size: 3.5rem; margin-bottom: 0px;'>{ticker_input}</h1>", unsafe_allow_html=True)
+        st.caption("Value Intelligence Terminal | Análisis Cuantitativo")
+    
+    with col_hero2:
+        st.metric("Precio de Mercado", f"${precio_mercado:.2f}" if precio_mercado else "N/A")
+    
+    with col_hero3:
+        fig_score_hero = plot_anillo_puntuacion(nota_final, 100, "Buffett Score (Calidad)", "#00C0F2")
+        st.plotly_chart(fig_score_hero, use_container_width=True)
+    
+    st.markdown("#### 📊 Scorecard Ejecutivo")
+    
+    # Función auxiliar rápida para el scorecard
+    def get_last(df, col):
+        if df is not None and col in df.columns:
+            s = df[col].dropna()
+            return s.iloc[-1] if not s.empty else None
+        return None
+    
+    sc_roe = get_last(res_bs["ratios"], "ROE %")
+    sc_roic = get_last(res_bs["ratios"], "ROIC %")
+    sc_fcf = get_last(res_cf["ratios"], "Free Cash Flow (B USD)")
+    sc_deuda = get_last(res_bs["ratios"], "Deuda / Capital")
+    
+    sc1, sc2, sc3, sc4 = st.columns(4)
+    sc1.metric("ROE (Rentabilidad)", f"{sc_roe:.1f}%" if sc_roe else "N/A", "Aprobado" if sc_roe and sc_roe > 15 else "Bajo")
+    sc2.metric("ROIC (Calidad)", f"{sc_roic:.1f}%" if sc_roic else "N/A", "Aprobado" if sc_roic and sc_roic > 15 else "Bajo")
+    sc3.metric("FCF Último Año", f"${sc_fcf:.1f}B" if sc_fcf else "N/A", "Genera Caja" if sc_fcf and sc_fcf > 0 else "Quema Caja")
+    sc4.metric("Deuda / Capital", f"{sc_deuda:.2f}x" if sc_deuda else "N/A", "Sano" if sc_deuda and sc_deuda < 0.8 else "Peligro", delta_color="inverse")
+
+    # ======== VEREDICTO ========
+    if res_val and precio_mercado:
+        v_justo = res_val.get('graham_value', 0) # Usamos Graham como base rápida
+        margen_seguridad = ((precio_mercado - v_justo) / v_justo) * 100 if v_justo > 0 else 0
+        estado_precio = "Infravalorada (Descuento)" if margen_seguridad < 0 else "Sobrevalorada (Prima)"
+    else:
+        estado_precio = "Datos insuficientes"
+    
+    st.subheader("🧠 Veredicto del Algoritmo")
+    
+    if nota_final >= 80:
+        st.success(f"**Negocio de Clase Mundial:** {ticker_input} obtiene un {nota_final}/100. Muestra un foso económico inquebrantable y alta rentabilidad. Actualmente cotiza en un estado de **{estado_precio}**.")
+    elif nota_final >= 50:
+        st.warning(f"**Negocio Promedio/Cíclico:** {ticker_input} obtiene un {nota_final}/100. Tiene puntos fuertes pero presenta debilidades estructurales (ej. deuda o márgenes bajos). Estado actual: **{estado_precio}**.")
+    else:
+        st.error(f"**Riesgo Fundamental Alto:** {ticker_input} obtiene un {nota_final}/100. La máquina detecta posible destrucción de valor. Operar con extrema precaución.")
+    
+    st.markdown("<br>", unsafe_allow_html=True) # Espacio antes de las pestañas
+
+    # ======== VULNERABILIDADES ========
+    st.markdown("### 🔎 Auditoría de Puntos Débiles (Bear Case)")
+    
+    alertas_detectadas = escanear_vulnerabilidades(res_is, res_bs, res_cf)
+    
+    if len(alertas_detectadas) == 0:
+        st.success("✅ **Foso Económico Intacto:** El escáner no ha detectado vulnerabilidades estructurales graves a nivel contable en el último año.")
+    else:
+        st.error(f"Se han detectado **{len(alertas_detectadas)} vulnerabilidades críticas** que debes investigar:")
+        for alerta in alertas_detectadas:
+            st.markdown(f"- {alerta}")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    pass # Borra el pass y pon tu código
+
+elif seccion_actual == "🔎 Análisis Fundamental":
+    # Mueve aquí:
+    # 1. Todo lo que tenías en tab1, tab2, tab3 (Dashboard, Ratios, ADN)
+    # 2. Modelos de Valoración (Graham, DCF)
+
+    # ======== ANÁLISIS BUFFET ========
     st.markdown("#### ⚖️ Test de Coste de Oportunidad (Buffett)")
     c4, c5, c6 = st.columns(3)
     if earnings_yield and tasa_riesgo:
@@ -1019,95 +1104,6 @@ nota_final = calcular_score_buffett(res_is["ratios"], res_bs["ratios"], res_cf["
         st.caption("💡 *Warren Buffett dice: 'Si no puedes batir al índice, invierte en el índice'. Este gráfico asume una inversión de $10,000 hace 10 años, midiendo si el riesgo de elegir esta acción individual ha sido recompensado frente a comprar el S&P 500.*")
     else:
         st.info("No hay suficientes datos de mercado para generar la comparativa con el S&P 500.")
-    st.markdown("---")
-else:
-    st.warning("Datos insuficientes para realizar el modelo de valoración.")
-
-# ==========================================
-# ENRUTADOR DE VISTAS (SPA ROUTER)
-# ==========================================
-if seccion_actual == "📊 Resumen Ejecutivo":
-    # Mueve aquí:
-    # 1. Tu Scorecard (ROE, ROIC, Deuda)
-    # 2. El Veredicto Narrativo de la IA
-    # 3. El Escáner Forense de Vulnerabilidades (El Abogado del Diablo)
-
-    # ======== HERO SECTION & SCORECARD ========
-    precio_mercado = res_val.get('precio_actual', 0) if res_val else 0
-
-    col_hero1, col_hero2, col_hero3 = st.columns([2, 1, 1])
-    
-    with col_hero1:
-        st.markdown(f"<h1 style='font-size: 3.5rem; margin-bottom: 0px;'>{ticker_input}</h1>", unsafe_allow_html=True)
-        st.caption("Value Intelligence Terminal | Análisis Cuantitativo")
-    
-    with col_hero2:
-        st.metric("Precio de Mercado", f"${precio_mercado:.2f}" if precio_mercado else "N/A")
-    
-    with col_hero3:
-        fig_score_hero = plot_anillo_puntuacion(nota_final, 100, "Buffett Score (Calidad)", "#00C0F2")
-        st.plotly_chart(fig_score_hero, use_container_width=True)
-    
-    st.markdown("#### 📊 Scorecard Ejecutivo")
-    
-    # Función auxiliar rápida para el scorecard
-    def get_last(df, col):
-        if df is not None and col in df.columns:
-            s = df[col].dropna()
-            return s.iloc[-1] if not s.empty else None
-        return None
-    
-    sc_roe = get_last(res_bs["ratios"], "ROE %")
-    sc_roic = get_last(res_bs["ratios"], "ROIC %")
-    sc_fcf = get_last(res_cf["ratios"], "Free Cash Flow (B USD)")
-    sc_deuda = get_last(res_bs["ratios"], "Deuda / Capital")
-    
-    sc1, sc2, sc3, sc4 = st.columns(4)
-    sc1.metric("ROE (Rentabilidad)", f"{sc_roe:.1f}%" if sc_roe else "N/A", "Aprobado" if sc_roe and sc_roe > 15 else "Bajo")
-    sc2.metric("ROIC (Calidad)", f"{sc_roic:.1f}%" if sc_roic else "N/A", "Aprobado" if sc_roic and sc_roic > 15 else "Bajo")
-    sc3.metric("FCF Último Año", f"${sc_fcf:.1f}B" if sc_fcf else "N/A", "Genera Caja" if sc_fcf and sc_fcf > 0 else "Quema Caja")
-    sc4.metric("Deuda / Capital", f"{sc_deuda:.2f}x" if sc_deuda else "N/A", "Sano" if sc_deuda and sc_deuda < 0.8 else "Peligro", delta_color="inverse")
-
-    # ======== VEREDICTO ========
-    if res_val and precio_mercado:
-        v_justo = res_val.get('graham_value', 0) # Usamos Graham como base rápida
-        margen_seguridad = ((precio_mercado - v_justo) / v_justo) * 100 if v_justo > 0 else 0
-        estado_precio = "Infravalorada (Descuento)" if margen_seguridad < 0 else "Sobrevalorada (Prima)"
-    else:
-        estado_precio = "Datos insuficientes"
-    
-    st.subheader("🧠 Veredicto del Algoritmo")
-    
-    if nota_final >= 80:
-        st.success(f"**Negocio de Clase Mundial:** {ticker_input} obtiene un {nota_final}/100. Muestra un foso económico inquebrantable y alta rentabilidad. Actualmente cotiza en un estado de **{estado_precio}**.")
-    elif nota_final >= 50:
-        st.warning(f"**Negocio Promedio/Cíclico:** {ticker_input} obtiene un {nota_final}/100. Tiene puntos fuertes pero presenta debilidades estructurales (ej. deuda o márgenes bajos). Estado actual: **{estado_precio}**.")
-    else:
-        st.error(f"**Riesgo Fundamental Alto:** {ticker_input} obtiene un {nota_final}/100. La máquina detecta posible destrucción de valor. Operar con extrema precaución.")
-    
-    st.markdown("<br>", unsafe_allow_html=True) # Espacio antes de las pestañas
-
-    # ======== VULNERABILIDADES ========
-    st.markdown("### 🔎 Auditoría de Puntos Débiles (Bear Case)")
-    
-    alertas_detectadas = escanear_vulnerabilidades(res_is, res_bs, res_cf)
-    
-    if len(alertas_detectadas) == 0:
-        st.success("✅ **Foso Económico Intacto:** El escáner no ha detectado vulnerabilidades estructurales graves a nivel contable en el último año.")
-    else:
-        st.error(f"Se han detectado **{len(alertas_detectadas)} vulnerabilidades críticas** que debes investigar:")
-        for alerta in alertas_detectadas:
-            st.markdown(f"- {alerta}")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    pass # Borra el pass y pon tu código
-
-elif seccion_actual == "🔎 Análisis Fundamental":
-    # Mueve aquí:
-    # 1. Todo lo que tenías en tab1, tab2, tab3 (Dashboard, Ratios, ADN)
-    # 2. Modelos de Valoración (Graham, DCF)
-
 
     # ======== TAB 1 ========
     fig = plot_dashboard_interactivo(
@@ -1466,6 +1462,22 @@ elif seccion_actual == "🔎 Análisis Fundamental":
             st.error(f"Error en el cálculo del Reverse DCF: {e}")
     else:
         st.info("Se necesita un Precio de Mercado actual y un EPS positivo para realizar la ingeniería inversa.")
+
+    # ======== TAB 8 ========
+    st.markdown("### 💸 Estrategia de Dividendos Crecientes (DGI)")
+    st.caption("No mires el dividendo actual, mira el futuro. El *Yield on Cost* (Rentabilidad sobre Coste) te dice cuánto dinero te pagará la empresa anualmente respecto a lo que pagaste por ella el día que la compraste.")
+    
+    if precio_actual:
+        with st.spinner("Calculando histórico y proyecciones de dividendos..."):
+            fig_dgi, texto_dgi = plot_proyeccion_dividendos(ticker_input, precio_actual)
+            
+            if fig_dgi:
+                st.plotly_chart(fig_dgi, use_container_width=True)
+                st.success(texto_dgi)
+            else:
+                st.info(texto_dgi) # Muestra el mensaje de error si la empresa no paga dividendo
+    else:
+        st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")
     pass
 
 elif seccion_actual == "📈 Técnico y Opciones":
@@ -1590,113 +1602,6 @@ elif seccion_actual == "📈 Técnico y Opciones":
         st.dataframe(df_insiders.style.map(color_transaction, subset=['Transaction']), use_container_width=True)
     else:
         st.info("No se han registrado transacciones recientes de insiders en la SEC o los datos no están disponibles.")
-        
-    st.markdown("---")
-    
-    st.markdown("#### ⚖️ Salud del Balance (Termómetro de Deuda)")
-    st.caption("Una deuda/capital superior a 0.8 indica que la empresa depende excesivamente de financiación externa.")
-    
-    # Extraer el último dato válido de Deuda/Capital de res_bs
-    try:
-        ultima_deuda_capital = res_bs["ratios"]["Deuda / Capital"].dropna().iloc[-1]
-        fig_deuda = plot_termometro_deuda(ultima_deuda_capital)
-        if fig_deuda:
-            st.plotly_chart(fig_deuda, use_container_width=True)
-    except Exception as e:
-        st.info("Datos de deuda insuficientes para generar el termómetro.")
-
-    st.markdown("---")
-    st.markdown("#### 🚨 Auditoría Forense y Riesgo de Quiebra (Altman Z-Score)")
-    st.caption("Un modelo institucional para detectar estrés financiero y manipulación antes de que Wall Street se dé cuenta.")
-    
-    if res_val and res_val.get('precio_actual') and res_val.get('acciones_actuales'):
-        with st.spinner("Realizando auditoría contable profunda..."):
-            fig_zscore, alertas_forenses, valor_z = plot_auditoria_forense(
-                ticker_input, 
-                res_val['precio_actual'], 
-                res_val['acciones_actuales']
-            )
-            
-            if fig_zscore:
-                col_z1, col_z2 = st.columns([1, 1.5])
-                
-                with col_z1:
-                    st.plotly_chart(fig_zscore, use_container_width=True)
-                    if valor_z < 1.8:
-                        st.error("**ESTADO CRÍTICO:** Alta probabilidad estadística de quiebra en los próximos 2 años.")
-                    elif valor_z < 3.0:
-                        st.warning("**ZONA GRIS:** Precaución. La empresa tiene algunas tensiones en el balance.")
-                    else:
-                        st.success("**ZONA SEGURA:** Balance acorazado. Riesgo de quiebra prácticamente nulo.")
-                        
-                with col_z2:
-                    st.markdown("##### 🚩 Banderas Rojas Detectadas")
-                    if not alertas_forenses:
-                        st.success("✅ **Auditoría Limpia:** No se han detectado anomalías graves de liquidez, dividendos o cobertura de intereses. Los estados financieros parecen íntegros.")
-                    else:
-                        for alerta in alertas_forenses:
-                            st.markdown(alerta)
-    else:
-        st.info("Faltan datos de precio o acciones en circulación para calcular el Z-Score.")
-
-    st.markdown("---")
-    st.markdown("#### 🕵️ Módulo Forense Avanzado: Beneish M-Score (Manipulación Contable)")
-    st.caption("Mientras el Z-Score mide la probabilidad de quiebra, el M-Score busca anomalías entre los devengos, la depreciación y las cuentas por cobrar para detectar si la directiva está inflando los beneficios artificialmente (Caso Enron).")
-    
-    with st.spinner("Cruzando las matrices contables de los últimos 24 meses..."):
-        fig_mscore, diag_mscore, detalles_mscore = plot_beneish_m_score(ticker_input)
-        
-        if fig_mscore:
-            col_m1, col_m2 = st.columns([1, 1.2])
-            
-            with col_m1:
-                st.plotly_chart(fig_mscore, use_container_width=True)
-                
-            with col_m2:
-                st.markdown("##### Veredicto del Algoritmo:")
-                if "ALERTA" in diag_mscore:
-                    st.error(diag_mscore)
-                elif "ADVERTENCIA" in diag_mscore:
-                    st.warning(diag_mscore)
-                else:
-                    st.success(diag_mscore)
-                    
-                if detalles_mscore:
-                    st.markdown("##### 🚩 Banderas Ocultas Detectadas:")
-                    for alerta in detalles_mscore:
-                        st.write(alerta)
-                else:
-                    st.write("✔️ Todos los sub-índices (Calidad de activos, depreciación, devengos) fluyen con normalidad.")
-        else:
-            st.info(diag_mscore)
-
-    st.markdown("---")
-    st.markdown("#### 🤖 Escáner de Sentimiento con IA (Módulo NLP)")
-    st.caption("El algoritmo lee las noticias financieras de los últimos días y analiza la lingüística de los titulares para detectar optimismo institucional o pánico mediático.")
-    
-    with st.spinner("Leyendo las últimas noticias con Inteligencia Artificial..."):
-        noticias_nlp, sentimiento_global = analizar_sentimiento_noticias(ticker_input)
-        
-        if noticias_nlp:
-            c_nlp1, c_nlp2 = st.columns([1, 2])
-            
-            with c_nlp1:
-                # Termómetro del Sentimiento Global
-                color_sentimiento = "green" if sentimiento_global > 0.1 else "red" if sentimiento_global < -0.1 else "gray"
-                estado_global = "ALCISTA 🐂" if sentimiento_global > 0.1 else "BAJISTA 🐻" if sentimiento_global < -0.1 else "NEUTRAL ⚖️"
-                
-                st.markdown(f"<h3 style='text-align: center;'>Veredicto de la IA:</h3>", unsafe_allow_html=True)
-                st.markdown(f"<h2 style='text-align: center; color: {color_sentimiento};'>{estado_global}</h2>", unsafe_allow_html=True)
-                st.progress((sentimiento_global + 1) / 2) # Convierte escala de -1 a 1 en escala 0 a 1
-                st.caption("Barra hacia la derecha = Noticias Positivas. Hacia la izquierda = Noticias Negativas.")
-                
-            with c_nlp2:
-                st.markdown("##### 📰 Titulares Analizados en Tiempo Real:")
-                for noti in noticias_nlp:
-                    # Mostramos el titular con un enlace clickeable a la noticia original
-                    st.markdown(f"- **{noti['Sentimiento']}** | [{noti['Titular']}]({noti['Link']}) *(Vía {noti['Fuente']})*")
-        else:
-            st.info("No se encontraron noticias recientes en inglés para procesar el sentimiento.")
     
     pass
 
@@ -1752,13 +1657,6 @@ elif seccion_actual == "🌍 Radar Macro y Sectores":
             """)
         else:
             st.warning(diagnostico_estacional)
-    pass
-
-elif seccion_actual == "🧠 Auditoría Forense":
-    # Mueve aquí:
-    # 1. Pestaña 6 y 7 (Z-Score, Beneish M-Score)
-    # 2. Calidad de Beneficios
-
 
     # ======== TAB 6 ========
     st.markdown("### ⚖️ Laboratorio Quant: Optimización de Cartera")
@@ -1871,22 +1769,118 @@ elif seccion_actual == "🧠 Auditoría Forense":
 
         else:
             st.error(f"🚨 Fallo técnico detectado:\n\n{diagnostico_macro}")
+    pass
 
-    # ======== TAB 8 ========
-    st.markdown("### 💸 Estrategia de Dividendos Crecientes (DGI)")
-    st.caption("No mires el dividendo actual, mira el futuro. El *Yield on Cost* (Rentabilidad sobre Coste) te dice cuánto dinero te pagará la empresa anualmente respecto a lo que pagaste por ella el día que la compraste.")
+elif seccion_actual == "🧠 Auditoría Forense":
+    # Mueve aquí:
+    # 1. Pestaña 6 y 7 (Z-Score, Beneish M-Score)
+    # 2. Calidad de Beneficios
+
+    # ======== AUDITORÍA FORENSE ========
+    st.markdown("#### ⚖️ Salud del Balance (Termómetro de Deuda)")
+    st.caption("Una deuda/capital superior a 0.8 indica que la empresa depende excesivamente de financiación externa.")
     
-    if precio_actual:
-        with st.spinner("Calculando histórico y proyecciones de dividendos..."):
-            fig_dgi, texto_dgi = plot_proyeccion_dividendos(ticker_input, precio_actual)
+    # Extraer el último dato válido de Deuda/Capital de res_bs
+    try:
+        ultima_deuda_capital = res_bs["ratios"]["Deuda / Capital"].dropna().iloc[-1]
+        fig_deuda = plot_termometro_deuda(ultima_deuda_capital)
+        if fig_deuda:
+            st.plotly_chart(fig_deuda, use_container_width=True)
+    except Exception as e:
+        st.info("Datos de deuda insuficientes para generar el termómetro.")
+
+    st.markdown("---")
+    st.markdown("#### 🚨 Auditoría Forense y Riesgo de Quiebra (Altman Z-Score)")
+    st.caption("Un modelo institucional para detectar estrés financiero y manipulación antes de que Wall Street se dé cuenta.")
+    
+    if res_val and res_val.get('precio_actual') and res_val.get('acciones_actuales'):
+        with st.spinner("Realizando auditoría contable profunda..."):
+            fig_zscore, alertas_forenses, valor_z = plot_auditoria_forense(
+                ticker_input, 
+                res_val['precio_actual'], 
+                res_val['acciones_actuales']
+            )
             
-            if fig_dgi:
-                st.plotly_chart(fig_dgi, use_container_width=True)
-                st.success(texto_dgi)
-            else:
-                st.info(texto_dgi) # Muestra el mensaje de error si la empresa no paga dividendo
+            if fig_zscore:
+                col_z1, col_z2 = st.columns([1, 1.5])
+                
+                with col_z1:
+                    st.plotly_chart(fig_zscore, use_container_width=True)
+                    if valor_z < 1.8:
+                        st.error("**ESTADO CRÍTICO:** Alta probabilidad estadística de quiebra en los próximos 2 años.")
+                    elif valor_z < 3.0:
+                        st.warning("**ZONA GRIS:** Precaución. La empresa tiene algunas tensiones en el balance.")
+                    else:
+                        st.success("**ZONA SEGURA:** Balance acorazado. Riesgo de quiebra prácticamente nulo.")
+                        
+                with col_z2:
+                    st.markdown("##### 🚩 Banderas Rojas Detectadas")
+                    if not alertas_forenses:
+                        st.success("✅ **Auditoría Limpia:** No se han detectado anomalías graves de liquidez, dividendos o cobertura de intereses. Los estados financieros parecen íntegros.")
+                    else:
+                        for alerta in alertas_forenses:
+                            st.markdown(alerta)
     else:
-        st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")
+        st.info("Faltan datos de precio o acciones en circulación para calcular el Z-Score.")
+
+    st.markdown("---")
+    st.markdown("#### 🕵️ Módulo Forense Avanzado: Beneish M-Score (Manipulación Contable)")
+    st.caption("Mientras el Z-Score mide la probabilidad de quiebra, el M-Score busca anomalías entre los devengos, la depreciación y las cuentas por cobrar para detectar si la directiva está inflando los beneficios artificialmente (Caso Enron).")
+    
+    with st.spinner("Cruzando las matrices contables de los últimos 24 meses..."):
+        fig_mscore, diag_mscore, detalles_mscore = plot_beneish_m_score(ticker_input)
+        
+        if fig_mscore:
+            col_m1, col_m2 = st.columns([1, 1.2])
+            
+            with col_m1:
+                st.plotly_chart(fig_mscore, use_container_width=True)
+                
+            with col_m2:
+                st.markdown("##### Veredicto del Algoritmo:")
+                if "ALERTA" in diag_mscore:
+                    st.error(diag_mscore)
+                elif "ADVERTENCIA" in diag_mscore:
+                    st.warning(diag_mscore)
+                else:
+                    st.success(diag_mscore)
+                    
+                if detalles_mscore:
+                    st.markdown("##### 🚩 Banderas Ocultas Detectadas:")
+                    for alerta in detalles_mscore:
+                        st.write(alerta)
+                else:
+                    st.write("✔️ Todos los sub-índices (Calidad de activos, depreciación, devengos) fluyen con normalidad.")
+        else:
+            st.info(diag_mscore)
+
+    st.markdown("---")
+    st.markdown("#### 🤖 Escáner de Sentimiento con IA (Módulo NLP)")
+    st.caption("El algoritmo lee las noticias financieras de los últimos días y analiza la lingüística de los titulares para detectar optimismo institucional o pánico mediático.")
+    
+    with st.spinner("Leyendo las últimas noticias con Inteligencia Artificial..."):
+        noticias_nlp, sentimiento_global = analizar_sentimiento_noticias(ticker_input)
+        
+        if noticias_nlp:
+            c_nlp1, c_nlp2 = st.columns([1, 2])
+            
+            with c_nlp1:
+                # Termómetro del Sentimiento Global
+                color_sentimiento = "green" if sentimiento_global > 0.1 else "red" if sentimiento_global < -0.1 else "gray"
+                estado_global = "ALCISTA 🐂" if sentimiento_global > 0.1 else "BAJISTA 🐻" if sentimiento_global < -0.1 else "NEUTRAL ⚖️"
+                
+                st.markdown(f"<h3 style='text-align: center;'>Veredicto de la IA:</h3>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='text-align: center; color: {color_sentimiento};'>{estado_global}</h2>", unsafe_allow_html=True)
+                st.progress((sentimiento_global + 1) / 2) # Convierte escala de -1 a 1 en escala 0 a 1
+                st.caption("Barra hacia la derecha = Noticias Positivas. Hacia la izquierda = Noticias Negativas.")
+                
+            with c_nlp2:
+                st.markdown("##### 📰 Titulares Analizados en Tiempo Real:")
+                for noti in noticias_nlp:
+                    # Mostramos el titular con un enlace clickeable a la noticia original
+                    st.markdown(f"- **{noti['Sentimiento']}** | [{noti['Titular']}]({noti['Link']}) *(Vía {noti['Fuente']})*")
+        else:
+            st.info("No se encontraron noticias recientes en inglés para procesar el sentimiento.")
     pass
 
 # ==========================================
