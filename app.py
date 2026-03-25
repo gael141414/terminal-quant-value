@@ -861,8 +861,6 @@ if seccion_actual == "📊 Resumen Ejecutivo":
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    pass # Borra el pass y pon tu código
-
 elif seccion_actual == "🔎 Análisis Fundamental":
     # Mueve aquí:
     # 1. Todo lo que tenías en tab1, tab2, tab3 (Dashboard, Ratios, ADN)
@@ -1478,7 +1476,6 @@ elif seccion_actual == "🔎 Análisis Fundamental":
                 st.info(texto_dgi) # Muestra el mensaje de error si la empresa no paga dividendo
     else:
         st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")
-    pass
 
 elif seccion_actual == "📈 Técnico y Opciones":
     # Mueve aquí:
@@ -1603,8 +1600,6 @@ elif seccion_actual == "📈 Técnico y Opciones":
     else:
         st.info("No se han registrado transacciones recientes de insiders en la SEC o los datos no están disponibles.")
     
-    pass
-
 elif seccion_actual == "🌍 Radar Macro y Sectores":
     # Mueve aquí:
     # 1. Tu nuevo Radar de Rotación Sectorial
@@ -1769,7 +1764,6 @@ elif seccion_actual == "🌍 Radar Macro y Sectores":
 
         else:
             st.error(f"🚨 Fallo técnico detectado:\n\n{diagnostico_macro}")
-    pass
 
 elif seccion_actual == "🧠 Auditoría Forense":
     # Mueve aquí:
@@ -1881,8 +1875,7 @@ elif seccion_actual == "🧠 Auditoría Forense":
                     st.markdown(f"- **{noti['Sentimiento']}** | [{noti['Titular']}]({noti['Link']}) *(Vía {noti['Fuente']})*")
         else:
             st.info("No se encontraron noticias recientes en inglés para procesar el sentimiento.")
-    pass
-
+            
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
 # ==========================================
