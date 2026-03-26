@@ -1737,8 +1737,6 @@ elif seccion_actual == "🌍 Radar Macro y Sectores":
                                 st.write(f"**{tick}:** {peso}%")
                                 st.progress(peso / 100)
 
-
-
     # ======== TAB 7 ========
     st.markdown("### 🌍 Visión Macro Institucional")
     st.caption("Analizando el flujo del 'Smart Money'. Los grandes fondos no miran las noticias, miran cómo se mueve el capital entre activos refugio y activos de riesgo.")
@@ -1816,6 +1814,59 @@ elif seccion_actual == "🌍 Radar Macro y Sectores":
 
         else:
             st.error(f"🚨 Fallo técnico detectado:\n\n{diagnostico_macro}")
+
+    # ======== ORÁCULO TÁCTICO IA ========
+    st.markdown("---")
+    st.markdown("### 🔮 Oráculo Táctico: Playbook de Inversión IA")
+    st.markdown("La Inteligencia Artificial analiza el ciclo económico actual (Curva de tipos, flujos de capital, VIX) y te sugiere cómo balancear tu cartera hoy.")
+
+    if st.button("🧠 Generar Playbook Estratégico", use_container_width=True):
+        with st.spinner("La IA está cruzando los datos macroeconómicos e institucionales..."):
+            try:
+                # 1. Recopilamos el contexto de tu terminal
+                spread = datos_macro.get('spread_curva', 0) if 'datos_macro' in locals() else 0
+                r_riesgo = datos_macro.get('ratio_riesgo', 0) if 'datos_macro' in locals() else 0
+                r_cu_au = datos_macro.get('ratio_cobre_oro', 0) if 'datos_macro' in locals() else 0
+                
+                mejor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector'] if 'df_sectores' in locals() and not df_sectores.empty else "Desconocido"
+                peor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector'] if 'df_sectores' in locals() and not df_sectores.empty else "Desconocido"
+
+                # 2. Diseñamos el Prompt Cuantitativo
+                prompt_oraculo = f"""
+                Eres el Estratega Jefe Macro (Chief Investment Officer) de un Hedge Fund Cuantitativo.
+                Tu trabajo es decirle a los clientes exactamente qué hacer con su dinero en este momento preciso basándote ESTRICTAMENTE en estos datos de mercado actuales:
+                
+                - Curva de Tipos (10Y-3M): {spread:+.2f} pts (Si es negativo, alerta extrema de recesión/riesgo).
+                - Apetito al Riesgo (Consumo Discrecional vs Básico): {r_riesgo:.2f}x (Si es < 2.0, el mercado está a la defensiva).
+                - Cobre vs Oro (Termómetro industrial): {r_cu_au:.3f} (Si sube, hay expansión. Si baja, hay miedo y se refugian en oro).
+                - Momentum Sectorial: El dinero está entrando en {mejor_sec} y huyendo de {peor_sec}.
+
+                Escribe un "Playbook Táctico" (Manual de Acción) dividido en estas 3 secciones:
+                1. 🌡️ **Diagnóstico del Ciclo:** ¿En qué fase estamos? (Expansión, Desaceleración, Miedo, Euforia). Usa los datos para justificarlo.
+                2. 🎯 **Asignación de Activos (Asset Allocation):** ¿Es momento de estar líquidos (Cash), comprar Bonos (Renta Fija), acumular Oro, o ir largos en Acciones? 
+                3. ⚔️ **Estrategia Táctica:** ¿Recomiendas comprar acciones con descuento ahora mismo, usar derivados (opciones Put para cubrirse), o subirse al momentum de {mejor_sec}?
+
+                Tono: Profesional, directo, sin rodeos, como si hablaras con un gestor de patrimonio.
+                """
+
+                # 3. Llamamos al cerebro de Gemini
+                modelo_oraculo = None
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        modelo_oraculo = m.name
+                        if "flash" in m.name.lower(): break 
+                
+                if modelo_oraculo:
+                    model = genai.GenerativeModel(modelo_oraculo)
+                    response = model.generate_content(prompt_oraculo)
+                    
+                    st.success("✅ Playbook generado con éxito basándose en datos de mercado en tiempo real.")
+                    with st.expander("📖 LEER PLAYBOOK TÁCTICO DE LA IA", expanded=True):
+                        st.markdown(response.text)
+                else:
+                    st.error("Error de conexión con la API de la IA.")
+            except Exception as e:
+                st.error(f"Faltan datos macroeconómicos para generar el oráculo. Espera a que carguen los gráficos superiores. Detalle: {e}")
 
 elif seccion_actual == "🧠 Auditoría Forense":
     # Mueve aquí:
