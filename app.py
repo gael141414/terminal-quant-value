@@ -216,7 +216,7 @@ def obtener_transacciones_insiders(ticker):
     except Exception as e:
         return None
 
-@st.cache_data(ttl=1) # Se actualiza 1 vez a la semana
+@st.cache_data(ttl=86400 * 7) # Se actualiza 1 vez a la semana
 def obtener_tickers_filtrados():
     """Descarga la lista de la SEC y filtra ETFs, SPACS y empresas extranjeras"""
     try:
