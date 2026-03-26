@@ -216,6 +216,28 @@ def obtener_transacciones_insiders(ticker):
     except Exception as e:
         return None
 
+@st.cache_data(ttl=86400 * 7) # Se actualiza 1 vez a la semana
+def obtener_diccionario_tickers():
+    """Descarga la lista oficial de la SEC con todas las empresas cotizadas para el autocompletado"""
+    try:
+        # Endpoint oficial de la SEC
+        url = "https://www.sec.gov/files/company_tickers.json"
+        # La SEC exige identificarse por cortesía
+        headers = {'User-Agent': 'ValueQuant Terminal (contacto@valuequant.com)'} 
+        r = requests.get(url, headers=headers, timeout=5)
+        datos = r.json()
+        
+        # Formateamos la lista para que se vea elegante: "NVDA - Nvidia Corp"
+        lista_formateada = [f"{v['ticker']} - {v['title'].title()}" for v in datos.values()]
+        return sorted(lista_formateada) # Ordenado alfabéticamente
+    except Exception as e:
+        # Salvavidas en caso de que la SEC esté caída
+        return [
+            "AAPL - Apple Inc.", "MSFT - Microsoft Corp.", "NVDA - Nvidia Corp.", 
+            "AMZN - Amazon.com Inc.", "META - Meta Platforms Inc.", "GOOGL - Alphabet Inc.",
+            "TSLA - Tesla Inc.", "BRK-B - Berkshire Hathaway Inc."
+        ]
+
 # ==========================================
 # WIDGET RADICAL 2: MOTOR TRADINGVIEW EN VIVO
 # ==========================================
@@ -696,8 +718,31 @@ with st.sidebar:
     st.markdown("<h3 style='text-align: center; color: #E0E6ED;'>⚙️ Configuración</h3>", unsafe_allow_html=True)
     st.markdown("---")
     
-    ticker_input = st.text_input("🎯 Ticker Principal", value="AAPL", help="Ej: AAPL, MSFT, TSLA").upper()
-    ticker_competidor = st.text_input("🥊 Comparador", value="", placeholder="Ej: MSFT (Opcional)").upper()
+    # 1. Cargamos la base de datos gigante de forma instantánea desde la caché
+    lista_tickers_sec = obtener_diccionario_tickers()
+    
+    # 2. Buscamos el índice de Apple para que siga siendo el valor por defecto
+    indice_aapl = next((i for i, item in enumerate(lista_tickers_sec) if item.startswith("AAPL -")), 0)
+    
+    # 3. El Buscador Principal
+    seleccion_principal = st.selectbox(
+        "🎯 Buscar Empresa (Ticker o Nombre)", 
+        options=lista_tickers_sec, 
+        index=indice_aapl,
+        help="Escribe el nombre de la empresa o el Ticker. Ej: 'Nvidia' o 'NVDA'"
+    )
+    # Extraemos solo el Ticker (lo que hay antes del guión) para que el código siga funcionando
+    ticker_input = seleccion_principal.split(" - ")[0]
+
+    # 4. El Buscador del Competidor
+    lista_competidores = [""] + lista_tickers_sec # Le añadimos una opción vacía al principio
+    seleccion_competidor = st.selectbox(
+        "🥊 Comparador (Opcional)", 
+        options=lista_competidores, 
+        index=0,
+        help="Selecciona un rival para habilitar el modo Batalla Head-to-Head."
+    )
+    ticker_competidor = seleccion_competidor.split(" - ")[0] if seleccion_competidor else ""
     años_hist = st.slider("Años históricos", 5, 20, 10)
     
     st.markdown("<br>", unsafe_allow_html=True)
