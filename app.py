@@ -2110,7 +2110,6 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
                     respuesta_ia = response.text
                     
                     # MAGIA NEGRA REGEX: Cazador de JSON a prueba de fallos
-                    # Primero busca bloques ```json ... ```, si falla, busca cualquier cosa entre { }
                     match = re.search(r'
 http://googleusercontent.com/immersive_entry_chip/0
 http://googleusercontent.com/immersive_entry_chip/1
