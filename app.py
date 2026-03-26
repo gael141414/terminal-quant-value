@@ -1982,120 +1982,138 @@ elif seccion_actual == "🧠 Auditoría Forense":
 
 elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
     st.markdown("### 🤖 Robo-Advisor Institucional: Perfilado Cuantitativo")
-    st.markdown("Responde a este cuestionario de 17 preguntas para que la IA audite tu psicología financiera y construya tu Asset Allocation (Asignación de Activos) ideal.")
     
-    # Lista de las 17 preguntas agrupadas por pilares
+    # Lista de las 17 preguntas (Base de datos interna)
     preguntas_test = [
-        {"pilar": "🏛️ PILAR 1: Horizonte y Capacidad", "q": "1. ¿En qué etapa vital te encuentras?", "op": ["a) Joven (18-35) - Acumulación agresiva", "b) Adulto (36-50) - Crecimiento con consolidación", "c) Maduro (51-65) - Preparando jubilación", "d) Jubilado (>65) - Distribución y preservación"]},
-        {"pilar": "🏛️ PILAR 1: Horizonte y Capacidad", "q": "2. ¿Cuándo planeas retirar más del 30% del capital?", "op": ["a) En menos de 2 años", "b) Entre 2 y 5 años", "c) Entre 5 y 10 años", "d) En más de 10 años"]},
-        {"pilar": "🏛️ PILAR 1: Horizonte y Capacidad", "q": "3. ¿Cómo está tu Fondo de Emergencia (en efectivo)?", "op": ["a) No tengo, invierto todo", "b) Cubre 1-3 meses de gastos", "c) Cubre 3-6 meses", "d) Más de 6 meses cubiertos"]},
-        {"pilar": "🧠 PILAR 2: Psicología y Tolerancia", "q": "4. Sleep Test: Tu cartera cae un 20% en un mes por pánico global. ¿Qué haces?", "op": ["a) Vendo todo por pánico", "b) Vendo una parte para sentirme seguro", "c) No hago nada (Hold)", "d) Compro más agresivamente (Buy the dip)"]},
-        {"pilar": "🧠 PILAR 2: Psicología y Tolerancia", "q": "5. Elige tu escenario ideal para 10.000$ a 1 año:", "op": ["a) Ganar 400$ seguros (Cero riesgo)", "b) Ganar 800$, riesgo de perder 200$", "c) Ganar 1.500$, riesgo de perder 1.000$", "d) Ganar 3.000$, riesgo de perder 2.500$"]},
-        {"pilar": "🧠 PILAR 2: Psicología y Tolerancia", "q": "6. Al invertir, ¿qué prefieres ver?", "op": ["a) Cero volatilidad y dividendos altos", "b) Equilibrio: dividendos y algo de crecimiento", "c) Crecimiento rápido, aunque sea muy volátil"]},
-        {"pilar": "🎯 PILAR 3: Conocimiento y Objetivos", "q": "7. ¿Cuál es tu experiencia real en bolsa?", "op": ["a) Novato (Solo banco)", "b) Intermedio (Acciones y ETFs)", "c) Avanzado (Opciones, fundamentales, macro)"]},
-        {"pilar": "🎯 PILAR 3: Conocimiento y Objetivos", "q": "8. ¿Cuál es tu objetivo principal?", "op": ["a) Preservación (Batir inflación)", "b) Rentas (Dividendos pasivos)", "c) Crecimiento a largo plazo", "d) Especulación agresiva"]},
-        {"pilar": "🎯 PILAR 3: Conocimiento y Objetivos", "q": "9. ¿Qué opinas de la Renta Fija y el Oro?", "op": ["a) Me encantan, dan seguridad", "b) Está bien tener un poco por si acaso", "c) No los quiero. 100% Acciones"]},
-        {"pilar": "🎯 PILAR 3: Conocimiento y Objetivos", "q": "10. ¿Con qué frecuencia revisarás tu cartera?", "op": ["a) Todos los días", "b) Una vez al mes", "c) Una vez al año", "d) Comprar y olvidar (Buy & Hold)"]},
-        {"pilar": "🔬 PILAR 4: Historial de Trinchera", "q": "11. ¿En qué has invertido dinero REAL en el pasado?", "op": ["a) Nunca he invertido", "b) Letras, bonos o depósitos", "c) Fondos indexados globales", "d) Acciones sueltas o Criptomonedas"]},
-        {"pilar": "🔬 PILAR 4: Historial de Trinchera", "q": "12. ¿Cuál ha sido tu mayor error financiero?", "op": ["a) El miedo (no invertir y perder frente a la inflación)", "b) Vender en pánico", "c) Comprar en la cima por avaricia (FOMO)", "d) Ninguno, soy muy disciplinado"]},
-        {"pilar": "🌍 PILAR 5: Preferencias Tácticas", "q": "13. ¿Qué sector sobreponderarías para la próxima década?", "op": ["a) Defensivo (Salud, Consumo Básico)", "b) Tecnológico / Inteligencia artificial", "c) Cíclico / Value (Energía, Bancos)", "d) Agnóstico (Compro el mundo entero)"]},
-        {"pilar": "🌍 PILAR 5: Preferencias Tácticas", "q": "14. ¿Cuál es tu sesgo geográfico?", "op": ["a) 100% Estados Unidos", "b) Global Desarrollado (EEUU, Europa, Japón)", "c) Apuesta por Emergentes (Asia, Latam)"]},
-        {"pilar": "💎 PILAR 6: Activos Alternativos", "q": "15. ¿Qué papel juegan las Criptomonedas (Ej: Bitcoin) para ti?", "op": ["a) Rechazo absoluto (0%)", "b) Curiosidad / Asimetría (1% - 5%)", "c) Convicción alta (>10%)"]},
-        {"pilar": "💎 PILAR 6: Activos Alternativos", "q": "16. ¿Cómo de estables son tus ingresos de trabajo/negocio?", "op": ["a) Inestables / Autónomo", "b) Normales / Contrato", "c) Muy seguros / Funcionario"]},
-        {"pilar": "💎 PILAR 6: Activos Alternativos", "q": "17. (Opcional) ¿Te importa la inversión ética (ESG)?", "op": ["a) Sí, no quiero empresas contaminantes o de armas", "b) Me da igual, busco máxima rentabilidad"]}
+        {"pilar": "🏛️ PILAR 1: Horizonte Temporal", "q": "1. ¿En qué etapa vital te encuentras?", "op": ["a) Joven (18-35) - Acumulación agresiva", "b) Adulto (36-50) - Crecimiento con consolidación", "c) Maduro (51-65) - Preparando jubilación", "d) Jubilado (>65) - Distribución y preservación"]},
+        {"pilar": "🏛️ PILAR 1: Liquidez", "q": "2. ¿Cuándo planeas retirar más del 30% del capital?", "op": ["a) En menos de 2 años", "b) Entre 2 y 5 años", "c) Entre 5 y 10 años", "d) En más de 10 años"]},
+        {"pilar": "🏛️ PILAR 1: Colchón de Seguridad", "q": "3. ¿Cómo está tu Fondo de Emergencia (en efectivo)?", "op": ["a) No tengo, invierto todo", "b) Cubre 1-3 meses de gastos", "c) Cubre 3-6 meses", "d) Más de 6 meses cubiertos"]},
+        {"pilar": "🧠 PILAR 2: Psicología del Inversor", "q": "4. Sleep Test: Tu cartera cae un 20% en un mes por pánico global. ¿Qué haces?", "op": ["a) Vendo todo por pánico", "b) Vendo una parte para sentirme seguro", "c) No hago nada (Hold)", "d) Compro más agresivamente (Buy the dip)"]},
+        {"pilar": "🧠 PILAR 2: Aversión a la Pérdida", "q": "5. Elige tu escenario ideal para 10.000$ a 1 año:", "op": ["a) Ganar 400$ seguros (Cero riesgo)", "b) Ganar 800$, riesgo de perder 200$", "c) Ganar 1.500$, riesgo de perder 1.000$", "d) Ganar 3.000$, riesgo de perder 2.500$"]},
+        {"pilar": "🧠 PILAR 2: Expectativas Visuales", "q": "6. Al invertir, ¿qué prefieres ver en tu cuenta?", "op": ["a) Cero volatilidad y dividendos altos", "b) Equilibrio: dividendos y algo de crecimiento", "c) Crecimiento rápido, aunque sea muy volátil"]},
+        {"pilar": "🎯 PILAR 3: Nivel de Sofisticación", "q": "7. ¿Cuál es tu experiencia real en bolsa?", "op": ["a) Novato (Solo banco)", "b) Intermedio (Acciones y ETFs)", "c) Avanzado (Opciones, fundamentales, macro)"]},
+        {"pilar": "🎯 PILAR 3: Objetivo del Capital", "q": "8. ¿Cuál es tu objetivo principal?", "op": ["a) Preservación (Batir inflación)", "b) Rentas (Dividendos pasivos)", "c) Crecimiento a largo plazo", "d) Especulación agresiva"]},
+        {"pilar": "🎯 PILAR 3: Visión de Refugios", "q": "9. ¿Qué opinas de la Renta Fija y el Oro?", "op": ["a) Me encantan, dan seguridad", "b) Está bien tener un poco por si acaso", "c) No los quiero. 100% Acciones"]},
+        {"pilar": "🎯 PILAR 3: Implicación Temporal", "q": "10. ¿Con qué frecuencia revisarás tu cartera?", "op": ["a) Todos los días", "b) Una vez al mes", "c) Una vez al año", "d) Comprar y olvidar (Buy & Hold)"]},
+        {"pilar": "🔬 PILAR 4: Track Record", "q": "11. ¿En qué has invertido dinero REAL en el pasado?", "op": ["a) Nunca he invertido", "b) Letras, bonos o depósitos", "c) Fondos indexados globales", "d) Acciones sueltas o Criptomonedas"]},
+        {"pilar": "🔬 PILAR 4: Autocrítica", "q": "12. ¿Cuál ha sido tu mayor error financiero?", "op": ["a) El miedo (no invertir y perder frente a la inflación)", "b) Vender en pánico", "c) Comprar en la cima por avaricia (FOMO)", "d) Ninguno, soy muy disciplinado"]},
+        {"pilar": "🌍 PILAR 5: Megatendencias", "q": "13. ¿Qué sector sobreponderarías para la próxima década?", "op": ["a) Defensivo (Salud, Consumo Básico)", "b) Tecnológico / Inteligencia artificial", "c) Cíclico / Value (Energía, Bancos)", "d) Agnóstico (Compro el mundo entero)"]},
+        {"pilar": "🌍 PILAR 5: Geopolítica", "q": "14. ¿Cuál es tu sesgo geográfico?", "op": ["a) 100% Estados Unidos", "b) Global Desarrollado (EEUU, Europa, Japón)", "c) Apuesta por Emergentes (Asia, Latam)"]},
+        {"pilar": "💎 PILAR 6: Activos Digitales", "q": "15. ¿Qué papel juegan las Criptomonedas para ti?", "op": ["a) Rechazo absoluto (0%)", "b) Curiosidad / Asimetría (1% - 5%)", "c) Convicción alta (>10%)"]},
+        {"pilar": "💎 PILAR 6: Ingresos Personales", "q": "16. ¿Cómo de estables son tus ingresos laborales?", "op": ["a) Inestables / Autónomo", "b) Normales / Contrato", "c) Muy seguros / Funcionario"]},
+        {"pilar": "💎 PILAR 6: Valores Morales", "q": "17. ¿Te importa la inversión ética (ESG)?", "op": ["a) Sí, no quiero empresas contaminantes o de armas", "b) Me da igual, busco máxima rentabilidad"]}
     ]
 
-    respuestas_usuario = {}
-    
-    # Formulamos las preguntas visualmente
-    with st.form("form_roboadvisor"):
-        pilar_actual = ""
-        for i, p in enumerate(preguntas_test):
-            if p["pilar"] != pilar_actual:
-                st.markdown(f"<br>#### {p['pilar']}", unsafe_allow_html=True)
-                st.markdown("---")
-                pilar_actual = p["pilar"]
-            
-            respuestas_usuario[f"Q{i+1}"] = st.radio(p["q"], p["op"], index=None)
-            
+    # --- INICIALIZACIÓN DE LA MÁQUINA DE ESTADOS (WIZARD) ---
+    if "robo_step" not in st.session_state:
+        st.session_state.robo_step = 0
+    if "robo_answers" not in st.session_state:
+        st.session_state.robo_answers = {}
+    if "robo_submit" not in st.session_state:
+        st.session_state.robo_submit = False
+
+    # --- FASE 1: EL TEST INTERACTIVO ---
+    if not st.session_state.robo_submit:
+        q_idx = st.session_state.robo_step
+        total_q = len(preguntas_test)
+        
+        # 1. Interfaz Visual Superior
+        st.progress((q_idx + 1) / total_q)
+        st.caption(f"Pregunta {q_idx + 1} de {total_q} — **{preguntas_test[q_idx]['pilar']}**")
+        
+        # 2. Tarjeta de la Pregunta
+        st.markdown(f"<h3 style='color: #00C0F2; font-weight: 600;'>{preguntas_test[q_idx]['q']}</h3>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
-        submit_test = st.form_submit_button("🚀 Auditar mi Perfil y Generar Cartera Óptima", use_container_width=True)
+        
+        # Recuperar respuesta si el usuario tiró "Hacia atrás"
+        respuesta_guardada = st.session_state.robo_answers.get(q_idx, None)
+        try: index_guardado = preguntas_test[q_idx]["op"].index(respuesta_guardada) if respuesta_guardada else None
+        except: index_guardado = None
+            
+        opcion_elegida = st.radio("Elige una opción:", preguntas_test[q_idx]["op"], index=index_guardado, label_visibility="collapsed")
+        
+        # 3. Botones de Navegación (Diapositivas)
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+        
+        with col_btn1:
+            if q_idx > 0:
+                if st.button("⬅️ Anterior", use_container_width=True):
+                    st.session_state.robo_answers[q_idx] = opcion_elegida
+                    st.session_state.robo_step -= 1
+                    st.rerun()
+                    
+        with col_btn3:
+            if q_idx < total_q - 1:
+                if st.button("Siguiente ➡️", use_container_width=True, type="primary"):
+                    if opcion_elegida is None:
+                        st.warning("⚠️ Selecciona una opción para avanzar.")
+                    else:
+                        st.session_state.robo_answers[q_idx] = opcion_elegida
+                        st.session_state.robo_step += 1
+                        st.rerun()
+            else:
+                if st.button("🚀 Crear Cartera", use_container_width=True, type="primary"):
+                    if opcion_elegida is None:
+                        st.warning("⚠️ Selecciona una opción para terminar.")
+                    else:
+                        st.session_state.robo_answers[q_idx] = opcion_elegida
+                        st.session_state.robo_submit = True
+                        st.rerun()
 
-    if submit_test:
-        # Validar que ha respondido a todo
-        if None in respuestas_usuario.values():
-            st.error("⚠️ Por favor, responde a todas las preguntas para que la IA pueda ser precisa.")
-        else:
-            with st.spinner("🧠 La Inteligencia Artificial está construyendo tu perfil de riesgo y estructurando tus Tickers..."):
-                import re
-                import json
-                
-                texto_respuestas = "\n".join([f"{preguntas_test[i]['q']}: {respuestas_usuario[f'Q{i+1}']}" for i in range(17)])
-                
-                prompt_roboadvisor = f"""
-                Eres un Wealth Manager Institucional de élite. Tu objetivo es crear un "Asset Allocation" (asignación de cartera) perfecto para este cliente basado en sus 17 respuestas a tu test psicológico.
+    # --- FASE 2: RESULTADOS Y ORÁCULO IA ---
+    else:
+        st.success("✅ Test Completado. Calculando Perfil Cuantitativo...")
+        if st.button("🔄 Repetir el Test"):
+            st.session_state.robo_step = 0
+            st.session_state.robo_answers = {}
+            st.session_state.robo_submit = False
+            st.rerun()
+            
+        with st.spinner("🧠 La Inteligencia Artificial está estructurando tus ETFs y Ponderaciones..."):
+            import re
+            import json
+            
+            # Formatear el historial para la IA
+            texto_respuestas = "\n".join([f"P{i+1}: {st.session_state.robo_answers[i]}" for i in range(17)])
+            
+            prompt_roboadvisor = f"""
+            Eres el Director de Inversiones (CIO) de un Wealth Management Suizo. Crea un "Asset Allocation" perfecto basado en estas respuestas de tu cliente:
+            {texto_respuestas}
 
-                RESPUESTAS DEL CLIENTE:
-                {texto_respuestas}
-
-                TUS INSTRUCCIONES ESTRICTAS:
-                1. Empieza escribiendo un "Perfil Psicológico y Diagnóstico" detallado del cliente. Analiza sus sesgos, su verdadera tolerancia al riesgo y sus objetivos.
-                2. Recomienda una estrategia global.
-                3. OBLIGATORIO: Al final de tu texto, debes incluir EXACTAMENTE este bloque de código JSON con los porcentajes de la cartera recomendada (deben sumar 100). Asigna los nombres y Tickers exactos de ETFs que recomiendas.
-                
-                Ejemplo del formato que DEBES poner al final:
-                [CARTERA]
-                {{"S&P 500 (SPY)": 50, "Salud y Defensivas (XLV)": 15, "Renta Fija Corto Plazo (SGOV)": 20, "Oro (GLD)": 10, "Bitcoin (IBIT)": 5}}
-                [/CARTERA]
-                """
-                
-                try:
-                    modelo_disponible = None
-                    for m in genai.list_models():
-                        if 'generateContent' in m.supported_generation_methods:
-                            modelo_disponible = m.name
-                            if "flash" in m.name.lower(): break 
-                            
-                    if modelo_disponible:
-                        model = genai.GenerativeModel(modelo_disponible)
-                        response = model.generate_content(prompt_roboadvisor)
-                        respuesta_ia = response.text
+            INSTRUCCIONES:
+            1. Escribe un perfil psicológico detallado (Nivel de riesgo, sesgos, horizonte).
+            2. Recomienda una tesis de inversión general.
+            3. CRÍTICO: Al final de tu texto, debes incluir obligatoriamente un bloque de código JSON con los Tickers exactos (ej. SPY, QQQ, GLD, SGOV) y sus porcentajes que sumen 100.
+            
+            Formato exacto del JSON al final:
+            ```json
+            {{
+              "S&P 500 (SPY)": 50,
+              "Oro (GLD)": 10,
+              "Bonos (SGOV)": 40
+            }}
+            ```
+            """
+            
+            try:
+                # Buscar un modelo que funcione
+                modelo_disponible = None
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        modelo_disponible = m.name
+                        if "flash" in m.name.lower(): break 
                         
-                        # Extraer el JSON mágico para pintar el gráfico
-                        match = re.search(r'\[CARTERA\](.*?)\[/CARTERA\]', respuesta_ia, re.DOTALL)
-                        
-                        st.success("✅ Auditoría completada. Aquí tienes tu hoja de ruta institucional.")
-                        
-                        # Si conseguimos el JSON, pintamos el gráfico arriba a todo color
-                        if match:
-                            try:
-                                json_str = match.group(1).strip()
-                                cartera_dict = json.loads(json_str)
-                                
-                                st.markdown("### 🍩 Tu Asset Allocation Recomendado")
-                                fig_pie = px.pie(
-                                    values=list(cartera_dict.values()), 
-                                    names=list(cartera_dict.keys()), 
-                                    hole=0.45,
-                                    color_discrete_sequence=px.colors.sequential.Tealgrn
-                                )
-                                fig_pie.update_traces(textposition='inside', textinfo='percent+label')
-                                fig_pie.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=400, showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                                st.plotly_chart(fig_pie, use_container_width=True)
-                                
-                                # Limpiamos la respuesta de la IA para que no se vea el bloque feo del JSON en el texto
-                                respuesta_limpia = re.sub(r'\[CARTERA\].*?\[/CARTERA\]', '', respuesta_ia, flags=re.DOTALL)
-                            except:
-                                respuesta_limpia = respuesta_ia
-                        else:
-                            respuesta_limpia = respuesta_ia
-                            st.warning("La IA ha generado tu perfil, pero no ha formateado el gráfico estándar. Lee sus porcentajes en el texto inferior.")
-                        
-                        st.markdown("### 🧠 Tesis de Inversión (IA)")
-                        st.markdown(respuesta_limpia)
-
-                except Exception as e:
-                    st.error(f"Error procesando el perfil psicológico: {e}")
+                if modelo_disponible:
+                    model = genai.GenerativeModel(modelo_disponible)
+                    response = model.generate_content(prompt_roboadvisor)
+                    respuesta_ia = response.text
+                    
+                    # MAGIA NEGRA REGEX: Cazador de JSON a prueba de fallos
+                    # Primero busca bloques ```json ... ```, si falla, busca cualquier cosa entre { }
+                    match = re.search(r'
+http://googleusercontent.com/immersive_entry_chip/0
+http://googleusercontent.com/immersive_entry_chip/1
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
