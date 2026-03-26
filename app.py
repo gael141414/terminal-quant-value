@@ -218,20 +218,31 @@ def obtener_transacciones_insiders(ticker):
 
 @st.cache_data(ttl=86400 * 7) # Se actualiza 1 vez a la semana
 def obtener_diccionario_tickers():
-    """Descarga la lista oficial de la SEC con todas las empresas cotizadas para el autocompletado"""
+    """Descarga la lista de la SEC y filtra ETFs, SPACS y empresas extranjeras"""
     try:
-        # Endpoint oficial de la SEC
         url = "https://www.sec.gov/files/company_tickers.json"
-        # La SEC exige identificarse por cortesía
         headers = {'User-Agent': 'ValueQuant Terminal (contacto@valuequant.com)'} 
         r = requests.get(url, headers=headers, timeout=5)
         datos = r.json()
         
-        # Formateamos la lista para que se vea elegante: "NVDA - Nvidia Corp"
-        lista_formateada = [f"{v['ticker']} - {v['title'].title()}" for v in datos.values()]
-        return sorted(lista_formateada) # Ordenado alfabéticamente
+        # 🛡️ FILTRO ANTI-EXTRANJEROS Y FONDOS
+        # Bloqueamos terminaciones típicas de ADRs, Europa, Asia, Paraísos Fiscales y ETFs.
+        filtros_basura = [
+            " ADR", " LTD", " LIMITED", " PLC", " S.A.", " N.V.", 
+            " FUND", " TRUST", " ETF", " ACQUISITION", " SPAC"
+        ]
+        
+        lista_formateada = []
+        for v in datos.values():
+            nombre_mayus = str(v['title']).upper()
+            
+            # Si NO contiene ninguna palabra prohibida, la aceptamos en el buscador
+            if not any(basura in nombre_mayus for basura in filtros_basura):
+                lista_formateada.append(f"{v['ticker']} - {v['title'].title()}")
+                
+        return sorted(lista_formateada)
+        
     except Exception as e:
-        # Salvavidas en caso de que la SEC esté caída
         return [
             "AAPL - Apple Inc.", "MSFT - Microsoft Corp.", "NVDA - Nvidia Corp.", 
             "AMZN - Amazon.com Inc.", "META - Meta Platforms Inc.", "GOOGL - Alphabet Inc.",
