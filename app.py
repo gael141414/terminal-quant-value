@@ -2070,30 +2070,34 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
             st.session_state.robo_submit = False
             st.rerun()
             
-        with st.spinner("🧠 La Inteligencia Artificial está estructurando tus ETFs y Ponderaciones..."):
+        with st.spinner("🧠 La Inteligencia Artificial está analizando tu psicología y estructurando tu cartera..."):
             import re
             import json
+            import plotly.express as px
             
             # Formatear el historial para la IA
             texto_respuestas = "\n".join([f"P{i+1}: {st.session_state.robo_answers[i]}" for i in range(17)])
+            
+            # TRUCO ANTI-BUGS: Generamos las comillas triples matemáticamente para no romper el visor
+            separador = "`" * 3
             
             prompt_roboadvisor = f"""
             Eres el Director de Inversiones (CIO) de un Wealth Management Suizo. Crea un "Asset Allocation" perfecto basado en estas respuestas de tu cliente:
             {texto_respuestas}
 
             INSTRUCCIONES:
-            1. Escribe un perfil psicológico detallado (Nivel de riesgo, sesgos, horizonte).
-            2. Recomienda una tesis de inversión general.
+            1. Escribe un perfil psicológico detallado (Nivel de riesgo, sesgos, horizonte temporal).
+            2. Recomienda una tesis de inversión general con activos concretos recomendados.
             3. CRÍTICO: Al final de tu texto, debes incluir obligatoriamente un bloque de código JSON con los Tickers exactos (ej. SPY, QQQ, GLD, SGOV) y sus porcentajes que sumen 100.
             
             Formato exacto del JSON al final:
-            ```json
+            {separador}json
             {{
               "S&P 500 (SPY)": 50,
               "Oro (GLD)": 10,
               "Bonos (SGOV)": 40
             }}
-            ```
+            {separador}
             """
             
             try:
@@ -2109,36 +2113,36 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
                     response = model.generate_content(prompt_roboadvisor)
                     respuesta_ia = response.text
                     
-                    # MAGIA NEGRA REGEX: Cazador de JSON a prueba de fallos
-                    match = re.search(r'(\{.*?\})', respuesta_ia, re.DOTALL)
+                    # 1. Buscamos el JSON usando las variables dinámicas para evitar fallos de formato
+                    patron_busqueda = separador + r'(?:json)?\s*(\{.*?\})\s*' + separador
+                    match = re.search(patron_busqueda, respuesta_ia, re.DOTALL | re.IGNORECASE)
+                    
+                    if not match:
+                        match = re.search(r'(\{.*?\})', respuesta_ia, re.DOTALL)
+
+                    respuesta_limpia = respuesta_ia
 
                     if match:
                         try:
                             json_str = match.group(1).strip()
+                            json_str = json_str.replace("'", '"')
+                            cartera_dict = json.loads(json_str)
                             
-                            try:
-                                cartera_dict = json.loads(json_str)
-                            except json.JSONDecodeError:
-                                json_str = json_str.replace("'", '"')
-                                cartera_dict = json.loads(json_str)
-                    
                             st.markdown("---")
                             st.markdown("### 🍩 Tu Asset Allocation Recomendado")
-                    
+                            
                             fig_pie = px.pie(
                                 values=list(cartera_dict.values()), 
                                 names=list(cartera_dict.keys()), 
                                 hole=0.5,
                                 color_discrete_sequence=px.colors.sequential.Tealgrn
                             )
-                    
                             fig_pie.update_traces(
                                 textposition='inside',
                                 textinfo='percent+label',
                                 textfont_size=14,
                                 hoverinfo='label+percent'
                             )
-                    
                             fig_pie.update_layout(
                                 margin=dict(t=20, b=20, l=0, r=0),
                                 height=450,
@@ -2146,17 +2150,21 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
                                 paper_bgcolor='rgba(0,0,0,0)',
                                 plot_bgcolor='rgba(0,0,0,0)'
                             )
-                    
                             st.plotly_chart(fig_pie, use_container_width=True)
-                    
-                            respuesta_limpia = re.sub(r'\{.*?\}', '', respuesta_ia, flags=re.DOTALL).strip()
-                    
+                            
+                            # Limpieza de texto usando la misma variable dinámica
+                            respuesta_limpia = re.sub(patron_busqueda, '', respuesta_ia, flags=re.DOTALL | re.IGNORECASE)
+                            respuesta_limpia = re.sub(r'\{.*?\}', '', respuesta_limpia, flags=re.DOTALL).strip()
+                            
                         except Exception as e:
-                            st.error(f"Error procesando la respuesta: {e}")
-
+                            st.error(f"Se estructuró la cartera, pero hubo un error generando el gráfico visual: {e}")
                     else:
-                        st.warning("No se encontró JSON en la respuesta de la IA.")
-            
+                        st.warning("⚠️ La IA generó tu perfil pero omitió la tabla de datos matemáticos.")
+
+                    # 2. IMPRIMIR EL ANÁLISIS
+                    st.markdown("### 🧠 Análisis del Gestor Cuantitativo y Perfil Psicológico")
+                    st.markdown(respuesta_limpia)
+
             except Exception as e:
                 st.error(f"Error general en la ejecución: {e}")
             
