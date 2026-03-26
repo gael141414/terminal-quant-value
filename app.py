@@ -2087,8 +2087,8 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
 
             INSTRUCCIONES:
             1. Escribe un perfil psicológico detallado (Nivel de riesgo, sesgos, horizonte temporal).
-            2. Recomienda una tesis de inversión general con activos concretos recomendados.
-            3. CRÍTICO: Al final de tu texto, debes incluir obligatoriamente un bloque de código JSON con los Tickers exactos (ej. SPY, QQQ, GLD, SGOV) y sus porcentajes que sumen 100.
+            2. Tesis de Inversión: Explica en formato texto qué Tickers recomiendas y POR QUÉ los has elegido para esta persona. Enuméralos.
+            3. CRÍTICO: Al final del todo, separado del texto, incluye obligatoriamente un bloque de código JSON con los Tickers exactos (ej. SPY, QQQ, GLD, SGOV) y sus porcentajes numéricos que sumen 100.
             
             Formato exacto del JSON al final:
             {separador}json
@@ -2155,6 +2155,7 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
                             # Limpieza de texto usando la misma variable dinámica
                             respuesta_limpia = re.sub(patron_busqueda, '', respuesta_ia, flags=re.DOTALL | re.IGNORECASE)
                             respuesta_limpia = re.sub(r'\{.*?\}', '', respuesta_limpia, flags=re.DOTALL).strip()
+                            respuesta_limpia += "\n\n*(Nota: Los porcentajes exactos han sido extraídos al gráfico interactivo superior 👆)*"
                             
                         except Exception as e:
                             st.error(f"Se estructuró la cartera, pero hubo un error generando el gráfico visual: {e}")
