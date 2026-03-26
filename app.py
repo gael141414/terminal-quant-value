@@ -2110,9 +2110,49 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
                     respuesta_ia = response.text
                     
                     # MAGIA NEGRA REGEX: Cazador de JSON a prueba de fallos
-                    match = re.search(r'
-http://googleusercontent.com/immersive_entry_chip/0
-http://googleusercontent.com/immersive_entry_chip/1
+                    match = re.search(r'(\{.*?\})', respuesta_ia, re.DOTALL)
+
+                    if match:
+                        try:
+                            json_str = match.group(1).strip()
+                            
+                            try:
+                                cartera_dict = json.loads(json_str)
+                            except json.JSONDecodeError:
+                                json_str = json_str.replace("'", '"')
+                                cartera_dict = json.loads(json_str)
+                    
+                            st.markdown("---")
+                            st.markdown("### 🍩 Tu Asset Allocation Recomendado")
+                    
+                            fig_pie = px.pie(
+                                values=list(cartera_dict.values()), 
+                                names=list(cartera_dict.keys()), 
+                                hole=0.5,
+                                color_discrete_sequence=px.colors.sequential.Tealgrn
+                            )
+                    
+                            fig_pie.update_traces(
+                                textposition='inside',
+                                textinfo='percent+label',
+                                textfont_size=14,
+                                hoverinfo='label+percent'
+                            )
+                    
+                            fig_pie.update_layout(
+                                margin=dict(t=20, b=20, l=0, r=0),
+                                height=450,
+                                showlegend=True,
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)'
+                            )
+                    
+                            st.plotly_chart(fig_pie, use_container_width=True)
+                    
+                            respuesta_limpia = re.sub(r'\{.*?\}', '', respuesta_ia, flags=re.DOTALL).strip()
+                    
+                        except Exception as e:
+                            st.error(f"Error procesando la respuesta: {e}")
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
