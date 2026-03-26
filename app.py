@@ -2153,6 +2153,12 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
                     
                         except Exception as e:
                             st.error(f"Error procesando la respuesta: {e}")
+
+                    else:
+                        st.warning("No se encontró JSON en la respuesta de la IA.")
+            
+            except Exception as e:
+                st.error(f"Error general en la ejecución: {e}")
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
