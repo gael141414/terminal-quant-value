@@ -217,7 +217,7 @@ def obtener_transacciones_insiders(ticker):
         return None
 
 @st.cache_data(ttl=86400 * 7) # Se actualiza 1 vez a la semana
-def obtener_diccionario_tickers():
+def obtener_tickers_filtrados():
     """Descarga la lista de la SEC y filtra ETFs, SPACS y empresas extranjeras"""
     try:
         url = "https://www.sec.gov/files/company_tickers.json"
@@ -225,29 +225,23 @@ def obtener_diccionario_tickers():
         r = requests.get(url, headers=headers, timeout=5)
         datos = r.json()
         
-        # 🛡️ FILTRO ANTI-EXTRANJEROS Y FONDOS
-        # Bloqueamos terminaciones típicas de ADRs, Europa, Asia, Paraísos Fiscales y ETFs.
+        # 🛡️ FILTRO ANTI-BASURA EXTREMO
         filtros_basura = [
             " ADR", " LTD", " LIMITED", " PLC", " S.A.", " N.V.", 
-            " FUND", " TRUST", " ETF", " ACQUISITION", " SPAC"
+            " FUND", " TRUST", " ETF", " ACQUISITION", " SPAC",
+            " BLANK CHECK", " BANCORP" # Añadimos más filtros de Wall Street
         ]
         
         lista_formateada = []
         for v in datos.values():
             nombre_mayus = str(v['title']).upper()
             
-            # Si NO contiene ninguna palabra prohibida, la aceptamos en el buscador
             if not any(basura in nombre_mayus for basura in filtros_basura):
                 lista_formateada.append(f"{v['ticker']} - {v['title'].title()}")
                 
         return sorted(lista_formateada)
-        
     except Exception as e:
-        return [
-            "AAPL - Apple Inc.", "MSFT - Microsoft Corp.", "NVDA - Nvidia Corp.", 
-            "AMZN - Amazon.com Inc.", "META - Meta Platforms Inc.", "GOOGL - Alphabet Inc.",
-            "TSLA - Tesla Inc.", "BRK-B - Berkshire Hathaway Inc."
-        ]
+        return ["AAPL - Apple Inc.", "MSFT - Microsoft Corp."]
 
 # ==========================================
 # WIDGET RADICAL 2: MOTOR TRADINGVIEW EN VIVO
@@ -730,7 +724,7 @@ with st.sidebar:
     st.markdown("---")
     
     # 1. Cargamos la base de datos gigante de forma instantánea desde la caché
-    lista_tickers_sec = obtener_diccionario_tickers()
+    lista_tickers_sec = obtener_tickers_filtrados()
     
     # 2. Buscamos el índice de Apple para que siga siendo el valor por defecto
     indice_aapl = next((i for i, item in enumerate(lista_tickers_sec) if item.startswith("AAPL -")), 0)
