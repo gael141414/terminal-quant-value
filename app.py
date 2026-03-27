@@ -40,7 +40,99 @@ def load_lottieurl(url: str):
     return r.json()
 
 # ---------------- CONFIGURACIÓN ---------------- #
-st.set_page_config(page_title="Buffett Terminal", page_icon="📈", layout="wide")
+# 1. CONFIGURACIÓN DE PÁGINA (Debe ser el primer comando de Streamlit)
+st.set_page_config(
+    page_title="ValueQuant Terminal", 
+    page_icon="🦅", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
+
+# 2. INYECCIÓN DE CSS INSTITUCIONAL (Estilo TradingView/Bloomberg)
+st.markdown("""
+<style>
+    /* Importar tipografía profesional (Inter) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Aplicar fuente y color de fondo global */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Fondo principal: Negro azulado profundo */
+    .stApp {
+        background-color: #0b0e14; 
+    }
+
+    /* Ocultar la marca de Streamlit (Header, Footer, Menú hamburguesa) */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* Estilizar el panel lateral (Sidebar) */
+    [data-testid="stSidebar"] {
+        background-color: #131722; /* Color exacto del sidebar de TradingView */
+        border-right: 1px solid #2a2e39;
+    }
+
+    /* Ajustar los márgenes para aprovechar el 100% de la pantalla */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+        max-width: 100% !important;
+    }
+
+    /* Estilo de las tarjetas de métricas (Metrics Cards) */
+    [data-testid="stMetricValue"] {
+        font-size: 1.8rem !important;
+        font-weight: 700 !important;
+        color: #d1d4dc !important; /* Blanco roto suave */
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.95rem !important;
+        font-weight: 500 !important;
+        color: #8a93a6 !important; /* Gris azulado */
+    }
+
+    /* Estilo de los botones genéricos */
+    .stButton>button {
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        border: 1px solid #2962ff !important; /* Azul TradingView */
+        background-color: rgba(41, 98, 255, 0.05) !important;
+        color: #2962ff !important;
+        transition: all 0.2s ease !important;
+    }
+    .stButton>button:hover {
+        background-color: rgba(41, 98, 255, 0.15) !important;
+        border: 1px solid #2962ff !important;
+    }
+    
+    /* Botón primario (Los que dicen type="primary") */
+    .stButton>button[kind="primary"] {
+        background-color: #2962ff !important;
+        color: white !important;
+    }
+    .stButton>button[kind="primary"]:hover {
+        background-color: #1e4bd8 !important;
+    }
+
+    /* Líneas separadoras más sutiles */
+    hr {
+        border-top: 1px solid #2a2e39 !important;
+        margin-top: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    /* Cajas de Alertas (Success, Info, Warning) */
+    .stAlert {
+        border-radius: 8px !important;
+        border: none !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # INYECCIÓN DE CSS (ANIMACIONES Y ESTILOS)
@@ -324,6 +416,43 @@ def calcular_score_buffett(df_is, df_bs, df_cf):
     if buybacks and buybacks > 0: score += 10
 
     return score
+
+import streamlit.components.v1 as components
+
+def renderizar_grafico_tradingview(ticker):
+    """Inyecta el widget avanzado y nativo de TradingView interactivo"""
+    codigo_html = f"""
+    <div class="tradingview-widget-container" style="height:100%;width:100%">
+      <div id="tv_chart_container" style="height:600px;width:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+      new TradingView.widget(
+      {{
+      "autosize": true,
+      "symbol": "{ticker}",
+      "interval": "D",
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "es",
+      "enable_publishing": false,
+      "backgroundColor": "#0b0e14",
+      "gridColor": "#1f293d",
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "save_image": false,
+      "container_id": "tv_chart_container",
+      "toolbar_bg": "#131722",
+      "studies": [
+        "Volume@tv-basicstudies",
+        "MASimple@tv-basicstudies"
+      ]
+    }}
+      );
+      </script>
+    </div>
+    """
+    components.html(codigo_html, height=600)
 
 def obtener_valoracion_sectorial(ticker):
     """Aplica la regla de valoración relativa según el sector (Basado en el marco institucional)"""
@@ -1580,7 +1709,10 @@ elif seccion_actual == "📈 Técnico y Opciones":
     st.markdown("---")
     st.markdown("#### 🕵️ El Rastro del Dinero: Mercado de Derivados (Opciones)")
     st.caption("Los inversores minoristas compran acciones. Los inversores institucionales compran opciones (Calls para apostar al alza, Puts para apostar a la baja o protegerse). Este gráfico suma todos los contratos abiertos para el próximo trimestre.")
-    
+
+    st.markdown("### 📈 Gráfico Interactivo Pro")
+    renderizar_grafico_tradingview(ticker_input)
+
     with st.spinner("Descargando la cadena de derivados de Wall Street..."):
         fig_opciones, diag_opciones = plot_flujo_opciones(ticker_input)
         
