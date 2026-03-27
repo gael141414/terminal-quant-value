@@ -2172,59 +2172,54 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
 
 elif seccion_actual == "🔮 Proyección IA y Catalizadores":
     st.markdown(f"### 🔮 Proyección Cuantitativa y Catalizadores: {ticker_input}")
-    st.markdown("La IA analiza los últimos eventos corporativos, noticias y estados financieros para detectar fosos defensivos y proyectar escenarios futuros.")
+    st.markdown("Modelo probabilístico: La IA evalúa fundamentales y sentimiento actual para trazar 3 escenarios de precio a 12 meses.")
     
-    if st.button("🚀 Ejecutar Modelo de Proyección Futura", type="primary", use_container_width=True):
-        with st.spinner("Absorbiendo noticias recientes y cruzando datos fundamentales..."):
+    if st.button("🚀 Ejecutar Modelo Probabilístico", type="primary", use_container_width=True):
+        with st.spinner("Procesando flujo de noticias y calculando proyecciones de precio..."):
             try:
                 import yfinance as yf
+                import pandas as pd
+                import plotly.graph_objects as go
+                import json
+                import re
                 
-                # 1. Extraer noticias en tiempo real (Últimos titulares)
+                # 1. Extraer datos actuales
                 empresa_yf = yf.Ticker(ticker_input)
                 noticias_crudas = empresa_yf.news
+                info = empresa_yf.info
+                
+                precio_actual = info.get('currentPrice', info.get('previousClose', 100))
+                sector = info.get('sector', 'Desconocido')
                 
                 text_noticias = "Sin noticias recientes."
                 if noticias_crudas:
-                    # Filtramos solo los títulos y publicadores para no saturar el prompt
-                    lista_titulares = []
-                    for n in noticias_crudas[:8]: # Cogemos las 8 más recientes
-                        titulo = n.get('title', '')
-                        editor = n.get('publisher', '')
-                        if titulo:
-                            lista_titulares.append(f"- {titulo} ({editor})")
+                    lista_titulares = [f"- {n.get('title', '')}" for n in noticias_crudas[:6] if n.get('title')]
                     text_noticias = "\n".join(lista_titulares)
                 
-                # Extraer un par de datos clave para anclar a la IA a la realidad
-                info = empresa_yf.info
-                sector = info.get('sector', 'Desconocido')
-                precio_actual = info.get('currentPrice', 'Desconocido')
+                separador = "`" * 3
                 
-                # 2. Prompt de Alta Precisión
+                # 2. Prompt estructurado para forzar estadísticas
                 prompt_proyeccion = f"""
-                Actúa como el Analista Jefe de Renta Variable de un Banco de Inversión Tier 1.
-                Estás analizando la empresa con Ticker: {ticker_input} (Sector: {sector}). Precio actual: {precio_actual}.
-                
-                Aquí tienes los últimos titulares de noticias reales sobre la empresa para evaluar el sentimiento y los eventos a corto plazo:
+                Eres un Analista Cuantitativo. Acción: {ticker_input}. Sector: {sector}. Precio Actual: ${precio_actual}.
+                Titulares recientes:
                 {text_noticias}
                 
-                Genera un informe estructurado estrictamente con las siguientes 3 secciones:
+                Genera un análisis y devuelve OBLIGATORIAMENTE este JSON estructurado al final. Debes mojarte y dar precios objetivo (Target Price) realistas a 12 meses.
                 
-                ### 🛡️ 1. Fosos Defensivos y Puntos Fuertes (Moats)
-                Analiza cuáles son las ventajas competitivas reales de esta empresa (Ej: Poder de fijación de precios, red de usuarios, patentes, monopolio natural). Enumera 3 puntos clave.
-                
-                ### ⚡ 2. Catalizadores a Corto/Medio Plazo
-                Basándote en el sector y las noticias recientes, ¿qué eventos específicos podrían disparar el precio de la acción al alza en los próximos 6 a 12 meses? (Ej: Lanzamiento de producto, bajada de tipos, adquisiciones). Enumera 2 o 3.
-                
-                ### 🎯 3. Proyección de Escenarios IA (Próximos 12-24 meses)
-                Define 3 escenarios probabilísticos claros y realistas:
-                - 🟢 Caso Toro (Bull Case): Qué tiene que salir perfecto y qué proyección de crecimiento tendría.
-                - 🟡 Caso Base (Base Case): La evolución más probable según la tendencia actual.
-                - 🔴 Caso Oso (Bear Case): Qué riesgos podrían materializarse y hundir el modelo de negocio.
-                
-                Usa un tono institucional, objetivo y directo. Usa negritas para destacar conceptos clave. No uses bloques de código.
+                Estructura del JSON requerida al final de tu respuesta:
+                {separador}json
+                {{
+                  "analisis_narrativo": "Tu tesis de inversión resumida en 3 líneas...",
+                  "puntos_fuertes": ["Foso 1", "Foso 2", "Foso 3"],
+                  "catalizadores": ["Evento A", "Evento B"],
+                  "probabilidad_alcista_pct": 65,
+                  "precio_toro": 150.50,
+                  "precio_base": 120.00,
+                  "precio_oso": 90.00
+                }}
+                {separador}
                 """
                 
-                # 3. Llamada al LLM
                 modelo_disponible = None
                 for m in genai.list_models():
                     if 'generateContent' in m.supported_generation_methods:
@@ -2234,29 +2229,76 @@ elif seccion_actual == "🔮 Proyección IA y Catalizadores":
                 if modelo_disponible:
                     model = genai.GenerativeModel(modelo_disponible)
                     response = model.generate_content(prompt_proyeccion)
+                    respuesta_ia = response.text
                     
-                    st.success("✅ Análisis predictivo completado con éxito.")
-                    
-                    # Mostrar las noticias que hemos usado como contexto de forma colapsable
-                    with st.expander("📰 Ver titulares analizados por la IA"):
-                        st.markdown(text_noticias)
-                    
-                    st.markdown("---")
-                    st.markdown(response.text)
-                    
-                else:
-                    st.error("No se pudo conectar con el motor de IA.")
-                    
+                    # 3. Extraer el JSON
+                    patron_busqueda = separador + r'(?:json)?\s*(\{.*?\})\s*' + separador
+                    match = re.search(patron_busqueda, respuesta_ia, re.DOTALL | re.IGNORECASE)
+                    if not match:
+                        match = re.search(r'(\{.*?\})', respuesta_ia, re.DOTALL)
+                        
+                    if match:
+                        datos_json = json.loads(match.group(1).replace("'", '"'))
+                        
+                        p_toro = float(datos_json.get("precio_toro", precio_actual * 1.2))
+                        p_base = float(datos_json.get("precio_base", precio_actual * 1.05))
+                        p_oso = float(datos_json.get("precio_oso", precio_actual * 0.8))
+                        prob_alcista = datos_json.get("probabilidad_alcista_pct", 50)
+                        
+                        # Cálculos de rentabilidad
+                        ret_toro = ((p_toro / precio_actual) - 1) * 100
+                        ret_base = ((p_base / precio_actual) - 1) * 100
+                        ret_oso = ((p_oso / precio_actual) - 1) * 100
+                        
+                        st.markdown("---")
+                        
+                        # 📊 TARJETAS VISUALES DE PROYECCIÓN
+                        st.markdown(f"### 🎯 Precio Objetivo a 12 Meses (Probabilidad Alcista: {prob_alcista}%)")
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("🟢 Caso Toro (Optimista)", f"${p_toro:,.2f}", f"{ret_toro:+.2f}%")
+                        c2.metric("🟡 Caso Base (Probable)", f"${p_base:,.2f}", f"{ret_base:+.2f}%")
+                        c3.metric("🔴 Caso Oso (Pesimista)", f"${p_oso:,.2f}", f"{ret_oso:+.2f}%")
+                        
+                        # 📈 GRÁFICO DE ABANICO (FAN CHART)
+                        fecha_hoy = pd.Timestamp.today()
+                        fecha_futura = fecha_hoy + pd.DateOffset(months=12)
+                        
+                        fig = go.Figure()
+                        # Punto de origen (Hoy)
+                        fig.add_trace(go.Scatter(x=[fecha_hoy], y=[precio_actual], mode='markers', marker=dict(color='white', size=10), name='Precio Actual'))
+                        # Linea Toro
+                        fig.add_trace(go.Scatter(x=[fecha_hoy, fecha_futura], y=[precio_actual, p_toro], mode='lines+markers', line=dict(color='#00C0F2', width=3, dash='dot'), name='Caso Toro'))
+                        # Linea Base
+                        fig.add_trace(go.Scatter(x=[fecha_hoy, fecha_futura], y=[precio_actual, p_base], mode='lines+markers', line=dict(color='#8c9bba', width=3), name='Caso Base'))
+                        # Linea Oso
+                        fig.add_trace(go.Scatter(x=[fecha_hoy, fecha_futura], y=[precio_actual, p_oso], mode='lines+markers', line=dict(color='#ff4b4b', width=3, dash='dot'), name='Caso Oso'))
+                        
+                        fig.update_layout(height=400, margin=dict(t=20, b=20, l=0, r=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', hovermode='x unified')
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        st.markdown("---")
+                        # 🛡️ LISTAS CLARAS DE CATALIZADORES
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.markdown("#### 🛡️ Fosos Defensivos (Moats)")
+                            for foso in datos_json.get("puntos_fuertes", []):
+                                st.success(f"✔️ {foso}")
+                        with col_b:
+                            st.markdown("#### ⚡ Catalizadores (Drivers)")
+                            for cat in datos_json.get("catalizadores", []):
+                                st.info(f"🚀 {cat}")
+                                
+                        st.markdown("<br>#### 🧠 Tesis del Algoritmo", unsafe_allow_html=True)
+                        st.write(datos_json.get("analisis_narrativo", ""))
+                    else:
+                        st.error("Error al estructurar los datos numéricos. Inténtalo de nuevo.")
+                        
             except Exception as e:
-                st.error(f"Error al generar la proyección: {e}")
-
+                st.error(f"Error procesando la proyección: {e}")
+                
 elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
     st.markdown(f"### ⏳ Máquina del Tiempo: Backtesting de {ticker_input}")
-    st.markdown("Viaja al pasado. Simula qué habría pasado si hubieras invertido tu dinero en esta empresa hace años, comparado con comprar simplemente un fondo índice del mundo (S&P 500).")
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # 1. Controles de la Máquina del Tiempo
     col1, col2 = st.columns([1, 2])
     with col1:
         inversion_inicial = st.number_input("💰 Inversión Inicial ($)", min_value=1000, max_value=1000000, value=10000, step=1000)
@@ -2270,38 +2312,30 @@ elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
                 import plotly.express as px
                 import numpy as np
                 
-                # 2. Descargar datos de forma segura (Por separado para evitar bugs de yfinance)
                 fecha_inicio = pd.Timestamp.today() - pd.DateOffset(years=anios_backtest)
                 
                 df_ticker = yf.download(ticker_input, start=fecha_inicio, progress=False)
                 df_spy = yf.download("SPY", start=fecha_inicio, progress=False)
                 
                 if df_ticker.empty or df_spy.empty:
-                    st.error(f"⚠️ No hay suficientes datos históricos para {ticker_input} o hubo un fallo de conexión.")
+                    st.error(f"⚠️ No hay suficientes datos para {ticker_input} en ese periodo.")
                 else:
-                    # Protección Cuantitativa: Usar 'Adj Close' si existe, si no, usar 'Close' normal
                     col_ticker = 'Adj Close' if 'Adj Close' in df_ticker.columns else 'Close'
                     col_spy = 'Adj Close' if 'Adj Close' in df_spy.columns else 'Close'
                     
-                    # Extraer solo las columnas numéricas puras para evitar formatos raros (MultiIndex)
                     serie_ticker = df_ticker[col_ticker].squeeze()
                     serie_spy = df_spy[col_spy].squeeze()
                     
-                    # Unir ambas tablas limpiamente por fecha
                     datos_historicos = pd.DataFrame({
                         ticker_input: serie_ticker,
                         'SPY': serie_spy
-                    }).dropna() # Borramos los días donde la bolsa estuvo cerrada
+                    }).dropna()
                     
-                    if datos_historicos.empty:
-                        st.error("No se pudieron alinear las fechas de los datos. Intenta con un Ticker diferente.")
-                    else:
-                        # 3. Matemáticas Cuantitativas: Convertir precio a valor de cartera (Base 10.000$)
+                    if not datos_historicos.empty:
                         retornos_acumulados = datos_historicos / datos_historicos.iloc[0]
                         cartera_ticker = retornos_acumulados[ticker_input] * inversion_inicial
                         cartera_spy = retornos_acumulados['SPY'] * inversion_inicial
                         
-                        # 4. Cálculo de KPIs (Métricas clave) extrayendo el valor puro (float)
                         valor_final_ticker = float(np.array(cartera_ticker)[-1])
                         valor_final_spy = float(np.array(cartera_spy)[-1])
                         
@@ -2310,52 +2344,64 @@ elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
                         alpha = rentabilidad_ticker - rentabilidad_spy 
                         
                         st.markdown("---")
-                        st.markdown("### 🏆 Resultados del Backtest")
-                        
-                        # Mostrar Tarjetas de Resultados
                         c1, c2, c3 = st.columns(3)
                         c1.metric(f"Valor Actual ({ticker_input})", f"${valor_final_ticker:,.2f}", f"{rentabilidad_ticker:+.2f}% Total")
                         c2.metric("Valor Actual (S&P 500)", f"${valor_final_spy:,.2f}", f"{rentabilidad_spy:+.2f}% Total")
-                        c3.metric("🔥 Alpha Generado", f"{alpha:+.2f}%", help="Si es positivo, la empresa batió al mercado.")
+                        c3.metric("🔥 Alpha Generado", f"{alpha:+.2f}%")
                         
-                        # 5. Estructurar datos para el gráfico de Plotly
                         df_plot = pd.DataFrame({
                             'Fecha': datos_historicos.index,
-                            f"{ticker_input} (Tu Inversión)": np.array(cartera_ticker),
-                            'S&P 500 (Mercado)': np.array(cartera_spy)
+                            f"{ticker_input}": np.array(cartera_ticker),
+                            'S&P 500': np.array(cartera_spy)
                         }).melt(id_vars=['Fecha'], var_name='Activo', value_name='Capital ($)')
                         
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        st.markdown("### 📈 Evolución Temporal del Capital")
-                        st.caption("👈 Desliza la barra inferior para hacer zoom en periodos concretos.")
-                        
-                        # 6. El Gráfico Interactivo con Línea de Tiempo
-                        fig_backtest = px.line(
-                            df_plot, 
-                            x='Fecha', 
-                            y='Capital ($)', 
-                            color='Activo',
-                            color_discrete_map={
-                                f"{ticker_input} (Tu Inversión)": '#00C0F2', 
-                                'S&P 500 (Mercado)': '#8c9bba'
-                            }
-                        )
-                        
-                        # Activamos el "Timeline Range Slider" de Plotly
+                        fig_backtest = px.line(df_plot, x='Fecha', y='Capital ($)', color='Activo', color_discrete_map={f"{ticker_input}": '#00C0F2', 'S&P 500': '#8c9bba'})
                         fig_backtest.update_xaxes(rangeslider_visible=True)
-                        fig_backtest.update_layout(
-                            height=550,
-                            margin=dict(t=10, b=20, l=0, r=0),
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            legend_title_text='Estrategia',
-                            hovermode='x unified'
-                        )
-                        
+                        fig_backtest.update_layout(height=450, margin=dict(t=10, b=20, l=0, r=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', hovermode='x unified')
                         st.plotly_chart(fig_backtest, use_container_width=True)
+
+                        # GUARDA DATOS EN MEMORIA PARA EL RETRO-ANÁLISIS
+                        st.session_state['backtest_data'] = {
+                            'fecha': fecha_inicio.strftime('%Y-%m-%d'),
+                            'rentabilidad': rentabilidad_ticker
+                        }
                         
             except Exception as e:
-                st.error(f"Hubo un error al ejecutar la simulación en el tiempo. Verifica tu conexión o el Ticker. Detalle: {e}")
+                st.error(f"Error en la simulación: {e}")
+
+    # --- MOTOR DE RETRO-ANÁLISIS IA ---
+    if 'backtest_data' in st.session_state:
+        st.markdown("---")
+        st.markdown("### 🕵️‍♂️ Auditoría Forense del Pasado (Retro-Análisis)")
+        st.markdown(f"¿Habría detectado nuestro algoritmo esta oportunidad (o trampa) si estuviéramos exactamente en **{st.session_state['backtest_data']['fecha']}**?")
+        
+        if st.button("🧠 Generar Veredicto del Pasado", use_container_width=True):
+            with st.spinner("Desconectando datos futuros... Simulando análisis en el pasado..."):
+                try:
+                    fecha_pasada = st.session_state['backtest_data']['fecha']
+                    rentabilidad_real = st.session_state['backtest_data']['rentabilidad']
+                    
+                    prompt_retro = f"""
+                    Actúa como un analista financiero que ha viajado en el tiempo al año {fecha_pasada}.
+                    Estás analizando la empresa {ticker_input} en ESE momento exacto. NO conoces el futuro. 
+                    
+                    Escribe un breve informe con estas 2 partes:
+                    1. 🕰️ **Veredicto en {fecha_pasada}:** ¿Qué opinaba el mercado de esta empresa en ese año? ¿Parecía una buena compra basándonos en lo que sabíamos entonces? Mójate y di si hubieras recomendado comprarla o no.
+                    2. 💥 **Choque con la Realidad (Actualidad):** Hoy sabemos que la rentabilidad real desde ese día ha sido del {rentabilidad_real:+.2f}%. ¿Acertaste en tu veredicto del pasado? ¿Qué evento inesperado ocurrió en estos años que el mercado no supo prever?
+                    """
+                    
+                    modelo_disponible = None
+                    for m in genai.list_models():
+                        if 'generateContent' in m.supported_generation_methods:
+                            modelo_disponible = m.name
+                            if "flash" in m.name.lower(): break 
+                            
+                    if modelo_disponible:
+                        model = genai.GenerativeModel(modelo_disponible)
+                        response = model.generate_content(prompt_retro)
+                        st.info(response.text)
+                except Exception as e:
+                    st.error(f"Error al generar el retro-análisis: {e}")
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
