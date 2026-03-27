@@ -770,7 +770,8 @@ with st.sidebar:
             "🌍 Radar Macro y Sectores",
             "🧠 Auditoría Forense",
             "🤖 Robo-Advisor & Test Perfil",
-            "🔮 Proyección IA y Catalizadores"
+            "🔮 Proyección IA y Catalizadores",
+            "⏳ Máquina del Tiempo (Backtest)"
         ], label_visibility="collapsed")
 
 # ==========================================
@@ -2249,6 +2250,97 @@ elif seccion_actual == "🔮 Proyección IA y Catalizadores":
                     
             except Exception as e:
                 st.error(f"Error al generar la proyección: {e}")
+
+elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
+    st.markdown(f"### ⏳ Máquina del Tiempo: Backtesting de {ticker_input}")
+    st.markdown("Viaja al pasado. Simula qué habría pasado si hubieras invertido tu dinero en esta empresa hace años, comparado con comprar simplemente un fondo índice del mundo (S&P 500).")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # 1. Controles de la Máquina del Tiempo
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        inversion_inicial = st.number_input("💰 Inversión Inicial ($)", min_value=1000, max_value=1000000, value=10000, step=1000)
+        anios_backtest = st.slider("📅 ¿Cuántos años atrás viajamos?", min_value=1, max_value=10, value=5)
+        
+    if st.button("▶️ Ejecutar Simulación Histórica", type="primary", use_container_width=True):
+        with st.spinner("Viajando en el tiempo y calculando rendimientos diarios..."):
+            try:
+                import yfinance as yf
+                import pandas as pd
+                import plotly.express as px
+                
+                # 2. Descargar datos históricos (Ticker vs S&P 500)
+                fecha_inicio = pd.Timestamp.today() - pd.DateOffset(years=anios_backtest)
+                # Bajamos los cierres ajustados (para tener en cuenta splits y dividendos)
+                datos_historicos = yf.download([ticker_input, "SPY"], start=fecha_inicio)['Adj Close']
+                
+                # Limpiar datos por si la empresa salió a bolsa hace menos años de los solicitados
+                datos_historicos = datos_historicos.dropna()
+                
+                if datos_historicos.empty or ticker_input not in datos_historicos.columns:
+                    st.error(f"⚠️ No hay suficientes datos históricos para {ticker_input}. Es posible que saliera a bolsa hace menos de {anios_backtest} años.")
+                else:
+                    # 3. Matemáticas Cuantitativas: Convertir precio a valor de cartera (Base 10.000$)
+                    retornos_acumulados = datos_historicos / datos_historicos.iloc[0]
+                    cartera_ticker = retornos_acumulados[ticker_input] * inversion_inicial
+                    cartera_spy = retornos_acumulados['SPY'] * inversion_inicial
+                    
+                    # 4. Cálculo de KPIs (Métricas clave)
+                    valor_final_ticker = cartera_ticker.iloc[-1]
+                    valor_final_spy = cartera_spy.iloc[-1]
+                    
+                    rentabilidad_ticker = ((valor_final_ticker / inversion_inicial) - 1) * 100
+                    rentabilidad_spy = ((valor_final_spy / inversion_inicial) - 1) * 100
+                    alpha = rentabilidad_ticker - rentabilidad_spy # Cuánto ha batido (o perdido) frente al mercado
+                    
+                    st.markdown("---")
+                    st.markdown("### 🏆 Resultados del Backtest")
+                    
+                    # Mostrar Tarjetas de Resultados
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric(f"Valor Actual ({ticker_input})", f"${valor_final_ticker:,.2f}", f"{rentabilidad_ticker:+.2f}% Total")
+                    c2.metric("Valor Actual (S&P 500)", f"${valor_final_spy:,.2f}", f"{rentabilidad_spy:+.2f}% Total")
+                    c3.metric("🔥 Alpha Generado", f"{alpha:+.2f}%", help="Si es positivo, la empresa batió al mercado. Si es negativo, habría sido mejor comprar un ETF del S&P 500.")
+                    
+                    # 5. Estructurar datos para el gráfico de Plotly
+                    df_plot = pd.DataFrame({
+                        'Fecha': datos_historicos.index,
+                        f"{ticker_input} (Tu Inversión)": cartera_ticker.values,
+                        'S&P 500 (Mercado)': cartera_spy.values
+                    }).melt(id_vars=['Fecha'], var_name='Activo', value_name='Capital ($)')
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("### 📈 Evolución Temporal del Capital")
+                    st.caption("👈 Desliza la barra inferior para hacer zoom en periodos concretos (Ej: Caída de 2020 o 2022).")
+                    
+                    # 6. El Gráfico Interactivo con Línea de Tiempo
+                    fig_backtest = px.line(
+                        df_plot, 
+                        x='Fecha', 
+                        y='Capital ($)', 
+                        color='Activo',
+                        color_discrete_map={
+                            f"{ticker_input} (Tu Inversión)": '#00C0F2', 
+                            'S&P 500 (Mercado)': '#8c9bba'
+                        }
+                    )
+                    
+                    # Activamos el "Timeline Range Slider" de Plotly
+                    fig_backtest.update_xaxes(rangeslider_visible=True)
+                    fig_backtest.update_layout(
+                        height=550,
+                        margin=dict(t=10, b=20, l=0, r=0),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        legend_title_text='Estrategia',
+                        hovermode='x unified' # Para que al pasar el ratón se vean ambos precios a la vez
+                    )
+                    
+                    st.plotly_chart(fig_backtest, use_container_width=True)
+                    
+            except Exception as e:
+                st.error(f"Hubo un error al ejecutar la simulación en el tiempo. Verifica tu conexión o el Ticker. Detalle: {e}")
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
