@@ -972,11 +972,6 @@ acciones_actuales = res_val.get('acciones_actuales', 0) if res_val else 0
 # ENRUTADOR DE VISTAS (SPA ROUTER)
 # ==========================================
 if seccion_actual == "📊 Resumen Ejecutivo":
-    # Mueve aquí:
-    # 1. Tu Scorecard (ROE, ROIC, Deuda)
-    # 2. El Veredicto Narrativo de la IA
-    # 3. El Escáner Forense de Vulnerabilidades (El Abogado del Diablo)
-
     # ======== HERO SECTION & SCORECARD ========
     precio_mercado = res_val.get('precio_actual', 0) if res_val else 0
 
@@ -1012,6 +1007,9 @@ if seccion_actual == "📊 Resumen Ejecutivo":
     sc2.metric("ROIC (Calidad)", f"{sc_roic:.1f}%" if sc_roic else "N/A", "Aprobado" if sc_roic and sc_roic > 15 else "Bajo")
     sc3.metric("FCF Último Año", f"${sc_fcf:.1f}B" if sc_fcf else "N/A", "Genera Caja" if sc_fcf and sc_fcf > 0 else "Quema Caja")
     sc4.metric("Deuda / Capital", f"{sc_deuda:.2f}x" if sc_deuda else "N/A", "Sano" if sc_deuda and sc_deuda < 0.8 else "Peligro", delta_color="inverse")
+
+    st.markdown("### 📈 Gráfico Interactivo Pro")
+    renderizar_grafico_tradingview(ticker_input)
 
     # ======== VEREDICTO ========
     if res_val and precio_mercado:
@@ -1709,9 +1707,6 @@ elif seccion_actual == "📈 Técnico y Opciones":
     st.markdown("---")
     st.markdown("#### 🕵️ El Rastro del Dinero: Mercado de Derivados (Opciones)")
     st.caption("Los inversores minoristas compran acciones. Los inversores institucionales compran opciones (Calls para apostar al alza, Puts para apostar a la baja o protegerse). Este gráfico suma todos los contratos abiertos para el próximo trimestre.")
-
-    st.markdown("### 📈 Gráfico Interactivo Pro")
-    renderizar_grafico_tradingview(ticker_input)
 
     with st.spinner("Descargando la cadena de derivados de Wall Street..."):
         fig_opciones, diag_opciones = plot_flujo_opciones(ticker_input)
