@@ -769,7 +769,8 @@ with st.sidebar:
             "📈 Técnico y Opciones",
             "🌍 Radar Macro y Sectores",
             "🧠 Auditoría Forense",
-            "🤖 Robo-Advisor & Test Perfil"
+            "🤖 Robo-Advisor & Test Perfil",
+            "🔮 Proyección IA y Catalizadores"
         ], label_visibility="collapsed")
 
 # ==========================================
@@ -2168,6 +2169,86 @@ elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
 
             except Exception as e:
                 st.error(f"Error general en la ejecución: {e}")
+
+elif seccion_actual == "🔮 Proyección IA y Catalizadores":
+    st.markdown(f"### 🔮 Proyección Cuantitativa y Catalizadores: {ticker_input}")
+    st.markdown("La IA analiza los últimos eventos corporativos, noticias y estados financieros para detectar fosos defensivos y proyectar escenarios futuros.")
+    
+    if st.button("🚀 Ejecutar Modelo de Proyección Futura", type="primary", use_container_width=True):
+        with st.spinner("Absorbiendo noticias recientes y cruzando datos fundamentales..."):
+            try:
+                import yfinance as yf
+                
+                # 1. Extraer noticias en tiempo real (Últimos titulares)
+                empresa_yf = yf.Ticker(ticker_input)
+                noticias_crudas = empresa_yf.news
+                
+                text_noticias = "Sin noticias recientes."
+                if noticias_crudas:
+                    # Filtramos solo los títulos y publicadores para no saturar el prompt
+                    lista_titulares = []
+                    for n in noticias_crudas[:8]: # Cogemos las 8 más recientes
+                        titulo = n.get('title', '')
+                        editor = n.get('publisher', '')
+                        if titulo:
+                            lista_titulares.append(f"- {titulo} ({editor})")
+                    text_noticias = "\n".join(lista_titulares)
+                
+                # Extraer un par de datos clave para anclar a la IA a la realidad
+                info = empresa_yf.info
+                sector = info.get('sector', 'Desconocido')
+                precio_actual = info.get('currentPrice', 'Desconocido')
+                
+                # 2. Prompt de Alta Precisión
+                prompt_proyeccion = f"""
+                Actúa como el Analista Jefe de Renta Variable de un Banco de Inversión Tier 1.
+                Estás analizando la empresa con Ticker: {ticker_input} (Sector: {sector}). Precio actual: {precio_actual}.
+                
+                Aquí tienes los últimos titulares de noticias reales sobre la empresa para evaluar el sentimiento y los eventos a corto plazo:
+                {text_noticias}
+                
+                Genera un informe estructurado estrictamente con las siguientes 3 secciones:
+                
+                ### 🛡️ 1. Fosos Defensivos y Puntos Fuertes (Moats)
+                Analiza cuáles son las ventajas competitivas reales de esta empresa (Ej: Poder de fijación de precios, red de usuarios, patentes, monopolio natural). Enumera 3 puntos clave.
+                
+                ### ⚡ 2. Catalizadores a Corto/Medio Plazo
+                Basándote en el sector y las noticias recientes, ¿qué eventos específicos podrían disparar el precio de la acción al alza en los próximos 6 a 12 meses? (Ej: Lanzamiento de producto, bajada de tipos, adquisiciones). Enumera 2 o 3.
+                
+                ### 🎯 3. Proyección de Escenarios IA (Próximos 12-24 meses)
+                Define 3 escenarios probabilísticos claros y realistas:
+                - 🟢 Caso Toro (Bull Case): Qué tiene que salir perfecto y qué proyección de crecimiento tendría.
+                - 🟡 Caso Base (Base Case): La evolución más probable según la tendencia actual.
+                - 🔴 Caso Oso (Bear Case): Qué riesgos podrían materializarse y hundir el modelo de negocio.
+                
+                Usa un tono institucional, objetivo y directo. Usa negritas para destacar conceptos clave. No uses bloques de código.
+                """
+                
+                # 3. Llamada al LLM
+                modelo_disponible = None
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        modelo_disponible = m.name
+                        if "flash" in m.name.lower(): break 
+                        
+                if modelo_disponible:
+                    model = genai.GenerativeModel(modelo_disponible)
+                    response = model.generate_content(prompt_proyeccion)
+                    
+                    st.success("✅ Análisis predictivo completado con éxito.")
+                    
+                    # Mostrar las noticias que hemos usado como contexto de forma colapsable
+                    with st.expander("📰 Ver titulares analizados por la IA"):
+                        st.markdown(text_noticias)
+                    
+                    st.markdown("---")
+                    st.markdown(response.text)
+                    
+                else:
+                    st.error("No se pudo conectar con el motor de IA.")
+                    
+            except Exception as e:
+                st.error(f"Error al generar la proyección: {e}")
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
