@@ -1056,7 +1056,7 @@ else:
     
     # Invocamos la herramienta correspondiente
     if seccion_actual == "📊 Resumen Ejecutivo":
-        ejecutar_resumen_ejecutivo(ticker_input)
+        ejecutar_resumen_ejecutivo(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final)
         
     elif seccion_actual == "🔎 Análisis Fundamental":
         ejecutar_analisis_fundamental(ticker_input)
