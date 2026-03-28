@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import streamlit.components.v1 as components
+from charts import plot_flujo_opciones, plot_grafico_tecnico_pro
 
 # Traemos la función de TradingView que creamos en la Fase 1
 def renderizar_grafico_tradingview(ticker):
