@@ -1049,9 +1049,13 @@ else:
     # Gestión del estado para recordar que ya hemos analizado una empresa
     if analizar_btn:
         st.session_state['empresa_analizada'] = True
+
+    if not st.session_state.get('empresa_analizada', False):
+        st.markdown("<h1 style='text-align: center;'>🦅 Terminal Quant Value</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #8c9bba;'>👈 Selecciona una empresa en el panel izquierdo y pulsa 'Analizar Empresa' para comenzar</h3>", unsafe_allow_html=True)
+        st.markdown("---")
         
-    # Si ya pulsamos el botón alguna vez en esta sesión, mostramos las herramientas
-    if st.session_state.get('empresa_analizada', False):
+    else:
         
         if seccion_actual == "📊 Resumen Ejecutivo":
             # ======== HERO SECTION & SCORECARD ========
@@ -1125,7 +1129,7 @@ else:
                     st.markdown(f"- {alerta}")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.write(f"Resumen de {ticker_input}") # Placeholder temporal
+            st.info(f"Mostrando Resumen Ejecutivo para {ticker_input}... (Asegúrate de modularizar esta sección).")
             
         elif seccion_actual == "🔎 Análisis Fundamental":
             # ======== ANÁLISIS BUFFET ========
@@ -1738,7 +1742,7 @@ else:
                         st.info(texto_dgi) # Muestra el mensaje de error si la empresa no paga dividendo
             else:
                 st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")
-            pass
+            st.info("Módulo de Análisis Fundamental en construcción...")
             
         elif seccion_actual == "📈 Técnico y Opciones":
             # ======== TAB 5 ========
@@ -1859,6 +1863,7 @@ else:
                 st.info("No se han registrado transacciones recientes de insiders en la SEC o los datos no están disponibles.")
             
         elif seccion_actual == "🌍 Radar Macro y Sectores":
+            st.info("Módulo de Radar Macro en construcción...")
             # ======== RADAR ROTACIÓN SECTORIAL ========
             with st.expander("🌍 Radar Macro: ¿Dónde está fluyendo el dinero? (Rotación Sectorial)", expanded=False):
                 st.markdown("Los grandes fondos de inversión rotan su capital constantemente. Aquí puedes ver qué sectores están calentándose y cuáles se están quedando atrás.")
@@ -2085,11 +2090,7 @@ else:
             
         elif seccion_actual == "🕵️‍♂️ Rastreador de Insiders (SEC)":
             ejecutar_rastreador_insiders(ticker_input)
-            
-    else:
-        # Pantalla de bienvenida si aún no han pulsado el botón
-        st.info("👆 Selecciona una empresa en el panel izquierdo y pulsa 'Analizar Empresa' para comenzar.")
-               
+                           
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
 # ==========================================
