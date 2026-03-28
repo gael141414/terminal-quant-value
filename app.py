@@ -142,6 +142,34 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+import requests
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def buscar_etf_yahoo(query):
+    """Consulta la API oculta de Yahoo Finance para autocompletar nombres de fondos."""
+    if not query or len(query) < 2:
+        return []
+    
+    # Endpoint interno de búsqueda de Yahoo
+    url = f"https://query2.finance.yahoo.com/v1/finance/search?q={query}&quotesCount=15&newsCount=0"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    
+    try:
+        res = requests.get(url, headers=headers, timeout=5)
+        datos = res.json()
+        resultados = []
+        
+        for quote in datos.get('quotes', []):
+            # Filtramos estrictamente para que solo salgan ETFs y Fondos
+            if quote.get('quoteType') in ['ETF', 'MUTUALFUND']:
+                simbolo = quote.get('symbol')
+                nombre = quote.get('shortname', quote.get('longname', 'Desconocido'))
+                resultados.append(f"{simbolo} ➔ {nombre}")
+                
+        return resultados
+    except Exception:
+        return []
+
 # ==========================================
 # INYECCIÓN DE CSS (ANIMACIONES Y ESTILOS)
 # ==========================================
@@ -850,70 +878,90 @@ st.markdown("""
 
 # ---------------- UI PREMIUM & CONTROL CENTRAL ---------------- #        
 
-# 1. SIDEBAR (CONTROL CENTRAL)
+# 1. SIDEBAR (CONTROL CENTRAL Y NAVEGACIÓN)
 with st.sidebar:
+    # --- ANIMACIÓN LOTTIE ---
     lottie_url = "https://assets3.lottiefiles.com/packages/lf20_fi0ty9ak.json" 
     lottie_trading = load_lottieurl(lottie_url)
     if lottie_trading:
         st_lottie(lottie_trading, height=180, key="trading_anim")
-    
-    st.markdown("<h3 style='text-align: center; color: #E0E6ED;'>⚙️ Configuración</h3>", unsafe_allow_html=True)
+
+    # --- EL MENÚ VA PRIMERO (Siempre visible) ---
+    st.markdown("<h3 style='text-align: center; color: #E0E6ED;'>🧭 Navegación Quant</h3>", unsafe_allow_html=True)
     st.markdown("---")
     
-    # 1. Cargamos la base de datos gigante de forma instantánea desde la caché
-    lista_tickers_sec = obtener_tickers_filtrados()
-    
-    # 2. Buscamos el índice de Apple para que siga siendo el valor por defecto
-    indice_aapl = next((i for i, item in enumerate(lista_tickers_sec) if item.startswith("AAPL -")), 0)
-    
-    # 3. El Buscador Principal
-    seleccion_principal = st.selectbox(
-        "🎯 Buscar Empresa (Ticker o Nombre)", 
-        options=lista_tickers_sec, 
-        index=indice_aapl,
-        help="Escribe el nombre de la empresa o el Ticker. Ej: 'Nvidia' o 'NVDA'"
-    )
-    # Extraemos solo el Ticker (lo que hay antes del guión) para que el código siga funcionando
-    ticker_input = seleccion_principal.split(" - ")[0]
+    seccion_actual = st.radio("Ir a:", [
+        "📊 Resumen Ejecutivo",
+        "🔎 Análisis Fundamental",
+        "📈 Técnico y Opciones",
+        "🌍 Radar Macro y Sectores",
+        "🧠 Auditoría Forense",
+        "🤖 Robo-Advisor & Test Perfil",
+        "🔮 Proyección IA y Catalizadores",
+        "⏳ Máquina del Tiempo (Backtest)",
+        "🚀 Radar Multibaggers (Small/Mid Caps)",
+        "🕵️‍♂️ Rastreador de Insiders (SEC)",
+        "🌐 Escáner Global (Screener)",
+        "🩻 Radiografía de ETFs (X-Ray)"
+    ], label_visibility="collapsed")
 
-    # 4. El Buscador del Competidor
-    lista_competidores = [""] + lista_tickers_sec # Le añadimos una opción vacía al principio
-    seleccion_competidor = st.selectbox(
-        "🥊 Comparador (Opcional)", 
-        options=lista_competidores, 
-        index=0,
-        help="Selecciona un rival para habilitar el modo Batalla Head-to-Head."
-    )
-    ticker_competidor = seleccion_competidor.split(" - ")[0] if seleccion_competidor else ""
-    años_hist = st.slider("Años históricos", 5, 20, 10)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    # Botón de análisis
-    ejecutar = st.button("🚀 ANALIZAR TERMINAL", use_container_width=True)
-    
-    # 1. GESTIÓN DEL ESTADO (MEMORIA)
-    if ejecutar and ticker_input:
-        st.session_state['analizado'] = True
-        st.session_state['ticker_actual'] = ticker_input
+    st.markdown("---")
+    st.markdown("<h4 style='color: #8c9bba;'>⚙️ Configuración</h4>", unsafe_allow_html=True)
 
-    # 2. MENÚ DE NAVEGACIÓN (Solo aparece si ya hemos analizado)
-    if st.session_state.get('analizado', False):
-        st.markdown("---")
-        st.markdown("<h4 style='color: #8c9bba;'>🧭 Navegación</h4>", unsafe_allow_html=True)
-        seccion_actual = st.radio("Ir a:", [
-            "📊 Resumen Ejecutivo",
-            "🔎 Análisis Fundamental",
-            "📈 Técnico y Opciones",
-            "🌍 Radar Macro y Sectores",
-            "🧠 Auditoría Forense",
-            "🤖 Robo-Advisor & Test Perfil",
-            "🔮 Proyección IA y Catalizadores",
-            "⏳ Máquina del Tiempo (Backtest)",
-            "🚀 Radar Multibaggers (Small/Mid Caps)",
-            "🕵️‍♂️ Rastreador de Insiders (SEC)",
-            "🌐 Escáner Global (Screener)",
-            "🩻 Radiografía de ETFs (X-Ray)"
-        ], label_visibility="collapsed")
+    # --- LÓGICA CONTEXTUAL (La barra se adapta a la herramienta elegida) ---
+
+    # CASO 1: RADIOGRAFÍA DE ETFs
+    if seccion_actual == "🩻 Radiografía de ETFs (X-Ray)":
+        st.info("🏦 Modo: Análisis de Fondos")
+        busqueda_etf = st.text_input("Buscar ETF (Ej: Vanguard, SPY):", value="", placeholder="Escribe para buscar...")
+        
+        etf_input = "SPY" # Valor de seguridad por defecto
+        
+        if busqueda_etf:
+            # Llamamos a la función de Yahoo que creamos antes
+            resultados_busqueda = buscar_etf_yahoo(busqueda_etf)
+            
+            if resultados_busqueda:
+                seleccion = st.selectbox("Selecciona el fondo correcto:", resultados_busqueda)
+                # Extraemos solo el Ticker (lo que hay antes de la flecha ➔)
+                etf_input = seleccion.split(" ➔ ")[0].strip()
+            else:
+                st.warning("No se encontraron fondos. Buscando por Ticker exacto...")
+                etf_input = busqueda_etf.upper()
+
+    # CASO 2: HERRAMIENTAS INDEPENDIENTES (No necesitan Ticker en la barra)
+    elif seccion_actual in ["🤖 Robo-Advisor & Test Perfil", "🌐 Escáner Global (Screener)"]:
+        st.success("👉 Continúa configurando esta herramienta directamente en la pantalla principal.")
+
+    # CASO 3: ANÁLISIS DE EMPRESAS (Tu buscador original para el resto de la app)
+    else:
+        st.info("🏢 Modo: Análisis de Acciones")
+        
+        # 1. Cargamos la base de datos de forma instantánea
+        lista_tickers_sec = obtener_tickers_filtrados()
+        indice_aapl = next((i for i, item in enumerate(lista_tickers_sec) if item.startswith("AAPL -")), 0)
+        
+        # 2. El Buscador Principal
+        seleccion_principal = st.selectbox(
+            "🎯 Buscar Empresa", 
+            options=lista_tickers_sec, 
+            index=indice_aapl,
+            help="Escribe el nombre de la empresa o el Ticker. Ej: 'Nvidia' o 'NVDA'"
+        )
+        ticker_input = seleccion_principal.split(" - ")[0]
+
+        # 3. El Buscador del Competidor
+        lista_competidores = [""] + lista_tickers_sec
+        seleccion_competidor = st.selectbox(
+            "🥊 Comparador (Opcional)", 
+            options=lista_competidores, 
+            index=0,
+            help="Selecciona un rival para el modo Head-to-Head."
+        )
+        ticker_competidor = seleccion_competidor.split(" - ")[0] if seleccion_competidor else ""
+        
+        # 4. Slider de años
+        años_hist = st.slider("Años históricos", 5, 20, 10)
 
 # ==========================================
 # PANTALLA DE INICIO (LANDING PAGE SAAS)
@@ -2032,7 +2080,7 @@ elif seccion_actual == "🌐 Escáner Global (Screener)":
     ejecutar_escaner_global()
 
 elif seccion_actual == "🩻 Radiografía de ETFs (X-Ray)":
-    ejecutar_radiografia_etf(ticker_input)
+    ejecutar_radiografia_etf(etf_input)
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
