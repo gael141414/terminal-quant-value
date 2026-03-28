@@ -6,6 +6,8 @@ import numpy as np
 import google.generativeai as genai
 
 def ejecutar_maquina_del_tiempo(ticker_input):
+    """Simulador histórico comparativo contra el S&P 500 y retro-auditoría IA"""
+    
     st.markdown(f"### ⏳ Máquina del Tiempo: Backtesting de {ticker_input}")
     
     col1, col2 = st.columns([1, 2])
