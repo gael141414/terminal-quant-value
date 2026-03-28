@@ -1063,9 +1063,10 @@ else:
     
     elif seccion_actual == "📈 Técnico y Opciones":
         ejecutar_tecnico_y_opciones(ticker_input)
-        
+
+    df_sectores = analizar_rotacion_sectores()
     elif seccion_actual == "🌍 Radar Macro y Sectores":
-        ejecutar_radar_macro(ticker_input, ticker_competidor)
+        ejecutar_radar_macro(ticker_input, ticker_competidor, df_sectores)
         
     elif seccion_actual == "🧠 Auditoría Forense":
         ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df)
