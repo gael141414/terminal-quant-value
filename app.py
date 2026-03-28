@@ -1059,8 +1059,8 @@ else:
         ejecutar_resumen_ejecutivo(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final)
         
     elif seccion_actual == "🔎 Análisis Fundamental":
-        ejecutar_analisis_fundamental(ticker_input)
-        
+        ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val)        
+    
     elif seccion_actual == "📈 Técnico y Opciones":
         ejecutar_tecnico_y_opciones(ticker_input)
         
@@ -1068,7 +1068,7 @@ else:
         ejecutar_radar_macro(ticker_input, ticker_competidor)
         
     elif seccion_actual == "🧠 Auditoría Forense":
-        ejecutar_auditoria_forense(ticker_input)
+        ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df)
 
     elif seccion_actual == "🔮 Proyección IA y Catalizadores":
         ejecutar_proyeccion(ticker_input)
