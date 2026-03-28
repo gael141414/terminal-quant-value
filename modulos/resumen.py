@@ -3,6 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+from charts import plot_anillo_puntuacion, plot_dashboard_interactivo, plot_football_field
 
 # Importa tus gráficos personalizados si los usas aquí
 from charts import plot_dashboard_interactivo, plot_calidad_beneficios 
