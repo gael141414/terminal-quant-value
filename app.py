@@ -36,6 +36,7 @@ from modulos.radar import ejecutar_radar_multibagger
 from modulos.forense import ejecutar_auditoria_forense
 from modulos.insiders import ejecutar_rastreador_insiders
 from modulos.screener import ejecutar_escaner_global
+from modulos.etf import ejecutar_radiografia_etf
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -910,7 +911,8 @@ with st.sidebar:
             "⏳ Máquina del Tiempo (Backtest)",
             "🚀 Radar Multibaggers (Small/Mid Caps)",
             "🕵️‍♂️ Rastreador de Insiders (SEC)",
-            "🌐 Escáner Global (Screener)"
+            "🌐 Escáner Global (Screener)",
+            "🩻 Radiografía de ETFs (X-Ray)"
         ], label_visibility="collapsed")
 
 # ==========================================
@@ -2028,6 +2030,9 @@ elif seccion_actual == "🕵️‍♂️ Rastreador de Insiders (SEC)":
     
 elif seccion_actual == "🌐 Escáner Global (Screener)":
     ejecutar_escaner_global()
+
+elif seccion_actual == "🩻 Radiografía de ETFs (X-Ray)":
+    ejecutar_radiografia_etf(ticker_input)
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
