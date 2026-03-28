@@ -34,6 +34,8 @@ from modulos.proyeccion import ejecutar_proyeccion
 from modulos.backtest import ejecutar_maquina_del_tiempo
 from modulos.radar import ejecutar_radar_multibagger
 from modulos.forense import ejecutar_auditoria_forense
+from modulos.insiders import ejecutar_rastreador_insiders
+from modulos.screener import ejecutar_escaner_global
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -906,7 +908,9 @@ with st.sidebar:
             "🤖 Robo-Advisor & Test Perfil",
             "🔮 Proyección IA y Catalizadores",
             "⏳ Máquina del Tiempo (Backtest)",
-            "🚀 Radar Multibaggers (Small/Mid Caps)"
+            "🚀 Radar Multibaggers (Small/Mid Caps)",
+            "🕵️‍♂️ Rastreador de Insiders (SEC)",
+            "🌐 Escáner Global (Screener)"
         ], label_visibility="collapsed")
 
 # ==========================================
@@ -2018,6 +2022,12 @@ elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
 
 elif seccion_actual == "🚀 Radar Multibaggers (Small/Mid Caps)":
     ejecutar_radar_multibagger(ticker_input)
+
+elif seccion_actual == "🕵️‍♂️ Rastreador de Insiders (SEC)":
+    ejecutar_rastreador_insiders(ticker_input)
+    
+elif seccion_actual == "🌐 Escáner Global (Screener)":
+    ejecutar_escaner_global()
             
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
