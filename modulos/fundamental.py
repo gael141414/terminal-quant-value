@@ -10,7 +10,7 @@ from balance_analyzer import analizar_balance
 from cashflow_analyzer import analizar_flujo_efectivo
 from valuator import valorar_empresa
 
-def ejecutar_analisis_fundamental(ticker_input):
+def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val):
     """Analiza los estados financieros, márgenes, deuda y valoración intrínseca."""
     st.markdown(f"### 🔎 Análisis Fundamental y Valoración: {ticker_input}")
 
