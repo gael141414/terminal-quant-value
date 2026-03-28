@@ -11,6 +11,10 @@ from cashflow_analyzer import analizar_flujo_efectivo
 from valuator import valorar_empresa
 
 def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val):
+    earnings_yield = res_val.get('earnings_yield', 0) if res_val else 0
+    tasa_riesgo = res_val.get('tasa_libre_riesgo', 0) if res_val else 0
+    precio_actual = res_val.get('precio_actual', 0) if res_val else 0
+    
     """Analiza los estados financieros, márgenes, deuda y valoración intrínseca."""
     st.markdown(f"### 🔎 Análisis Fundamental y Valoración: {ticker_input}")
 
