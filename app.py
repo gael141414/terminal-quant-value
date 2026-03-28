@@ -970,123 +970,117 @@ with st.sidebar:
         # Reintroducimos el botón de Análisis SOLO para las herramientas de empresa
         analizar_btn = st.button("🚀 ANALIZAR EMPRESA", use_container_width=True, type="primary")
 
-# ==========================================
-# PANTALLA DE INICIO (LANDING PAGE SAAS)
-# ==========================================
-if not st.session_state.get('analizado', False):
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Dividimos la pantalla: 60% texto a la izquierda, 40% animación a la derecha
-    col_hero_texto, col_hero_anim = st.columns([1.2, 1])
-    
-    with col_hero_texto:
-        st.markdown("<h1 style='font-size: 4.5rem; color: #E0E6ED;'>🦅 Value<span style='color: #00C0F2;'>Quant</span></h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.2rem; color: #8c9bba;'>La terminal institucional para el inversor inteligente.<br>Inteligencia Artificial, Análisis Forense y Cuantitativo en un solo lugar.</p>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color: #00C0F2;'>👈 Introduce un Ticker en el panel lateral para comenzar</h4>", unsafe_allow_html=True)
-        
-    with col_hero_anim:
-        # Cargamos una animación de análisis de datos para rellenar el espacio derecho
-        lottie_landing = load_lottieurl("https://assets1.lottiefiles.com/packages/lf20_1w3l1m2h.json") 
-        if lottie_landing:
-            st_lottie(lottie_landing, height=250, key="landing_anim")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    # Las 3 tarjetas de información debajo
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.info("📊 **Datos Institucionales**\n\nConéctate en tiempo real a la SEC y obtén décadas de historia financiera.")
-    with col2:
-        st.success("🧠 **Inteligencia Artificial**\n\nUn copiloto RAG integrado que audita los balances por ti en milisegundos.")
-    with col3:
-        st.warning("⚠️ **Auditoría Forense**\n\nDetecta quema de caja, deuda tóxica y manipulación contable (Z-Score & M-Score).")
-        
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    render_ticker_tape()
-    st.stop() # Detenemos la app aquí para que no cargue nada más
-
-    st.markdown("---")
-    st.caption("Terminal v3.0 | Arquitectura Institucional")
-    
-# 2. CARGA DE DATOS (SILENCIOSA Y PROFESIONAL)
-render_ticker_tape()
-
-with st.spinner(f"Sincronizando con Wall Street... Descargando {años_hist} años de datos para {ticker_input}"):
-    is_df, bs_df, cf_df = cargar_datos(ticker_input, años_hist)
-
-if is_df is None:
-    st.error("🚨 Fallo de conexión con la SEC/Yahoo Finance. Verifica el Ticker.")
-    st.stop()
-
-# Procesamiento en background
-res_is = analizar_cuenta_resultados(is_df, cf_df)
-res_bs = analizar_balance(bs_df, is_df)
-res_cf = analizar_flujo_efectivo(cf_df, is_df)
-res_val = valorar_empresa(is_df, bs_df, cf_df, ticker_input)
-nota_final = calcular_score_buffett(res_is["ratios"], res_bs["ratios"], res_cf["ratios"])
-
-# --- EXTRACCIÓN GLOBAL DE VARIABLES SEGURAS ---
-precio_actual = res_val.get('precio_actual', 0) if res_val else 0
-eps_actual = res_val.get('eps_actual', 0) if res_val else 0
-earnings_yield = res_val.get('earnings_yield', 0) if res_val else 0
-tasa_riesgo = res_val.get('tasa_libre_riesgo', 0) if res_val else 0
-acciones_actuales = res_val.get('acciones_actuales', 0) if res_val else 0
-
 # ---------------------------------------------------------
 # 2. ENRUTADOR PRINCIPAL (Gestión de la pantalla central)
 # ---------------------------------------------------------
 
+herramientas_independientes = [
+    "🤖 Robo-Advisor & Test Perfil", 
+    "🌐 Escáner Global (Screener)", 
+    "🩻 Radiografía de ETFs (X-Ray)"
+]
+
 # CASOS INDEPENDIENTES (No necesitan darle al botón del sidebar)
-if seccion_actual == "🤖 Robo-Advisor & Test Perfil":
-    ejecutar_roboadvisor()
+if seccion_actual in herramientas_independientes:
+    # ---------------------------------------------------------
+    # RUTA A: HERRAMIENTAS QUE NO NECESITAN BOTÓN DE "ANALIZAR"
+    # ---------------------------------------------------------
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if seccion_actual == "🤖 Robo-Advisor & Test Perfil":
+        ejecutar_roboadvisor()
 
-elif seccion_actual == "🌐 Escáner Global (Screener)":
-    ejecutar_escaner_global()
+    elif seccion_actual == "🌐 Escáner Global (Screener)":
+        ejecutar_escaner_global()
 
-elif seccion_actual == "🩻 Radiografía de ETFs (X-Ray)":
-    ejecutar_radiografia_etf(etf_input)
+    elif seccion_actual == "🩻 Radiografía de ETFs (X-Ray)":
+        ejecutar_radiografia_etf(etf_input)
 
 # CASOS DE EMPRESA (Requieren pulsar el botón del sidebar la primera vez)
 else:
-    # Gestión del estado para recordar que ya hemos analizado una empresa
+    # ---------------------------------------------------------
+    # RUTA B: HERRAMIENTAS DE EMPRESA (Requieren pulsar el botón)
+    # ---------------------------------------------------------
+    
+    # 1. Escuchamos al botón de la barra lateral
     if analizar_btn:
         st.session_state['empresa_analizada'] = True
 
+    # 2. Si AÚN NO han pulsado el botón -> Mostramos la Landing Page
     if not st.session_state.get('empresa_analizada', False):
-        st.markdown("<h1 style='text-align: center;'>🦅 Terminal Quant Value</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #8c9bba;'>👈 Selecciona una empresa en el panel izquierdo y pulsa 'Analizar Empresa' para comenzar</h3>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        col_hero_texto, col_hero_anim = st.columns([1.2, 1])
+        
+        with col_hero_texto:
+            st.markdown("<h1 style='font-size: 4.5rem; color: #E0E6ED;'>🦅 Value<span style='color: #00C0F2;'>Quant</span></h1>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 1.2rem; color: #8c9bba;'>La terminal institucional para el inversor inteligente.<br>Inteligencia Artificial, Análisis Forense y Cuantitativo en un solo lugar.</p>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #00C0F2;'>👈 Selecciona una empresa en el panel lateral y pulsa 'Analizar' para comenzar</h4>", unsafe_allow_html=True)
+            
+        with col_hero_anim:
+            lottie_landing = load_lottieurl("https://assets1.lottiefiles.com/packages/lf20_1w3l1m2h.json") 
+            if lottie_landing:
+                st_lottie(lottie_landing, height=250, key="landing_anim")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("---")
         
-    else:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.info("📊 **Datos Institucionales**\n\nConéctate en tiempo real a la SEC.")
+        with col2:
+            st.success("🧠 **Inteligencia Artificial**\n\nCopiloto integrado que audita balances.")
+        with col3:
+            st.warning("⚠️ **Auditoría Forense**\n\nDetecta quema de caja y deuda tóxica.")
+            
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        render_ticker_tape()
+        st.stop() # 🛑 AHORA SÍ es seguro detener la app aquí, porque sabemos que están en el "Modo Empresa"
+
+    # 3. Si YA han pulsado el botón -> Cargamos los datos y mostramos la herramienta
+    render_ticker_tape()
+
+    with st.spinner(f"Sincronizando con Wall Street... Descargando {años_hist} años de datos para {ticker_input}"):
+        is_df, bs_df, cf_df = cargar_datos(ticker_input, años_hist)
+
+    if is_df is None:
+        st.error("🚨 Fallo de conexión con la SEC/Yahoo Finance. Verifica el Ticker.")
+        st.stop()
+
+    # Procesamiento matemático de fondo (Para el Chatbot y otras funciones futuras)
+    res_is = analizar_cuenta_resultados(is_df, cf_df)
+    res_bs = analizar_balance(bs_df, is_df)
+    res_cf = analizar_flujo_efectivo(cf_df, is_df)
+    res_val = valorar_empresa(is_df, bs_df, cf_df, ticker_input)
+    nota_final = calcular_score_buffett(res_is["ratios"], res_bs["ratios"], res_cf["ratios"])
+    
+    # Invocamos la herramienta correspondiente
+    if seccion_actual == "📊 Resumen Ejecutivo":
+        ejecutar_resumen_ejecutivo(ticker_input)
         
-        if seccion_actual == "📊 Resumen Ejecutivo":
-            ejecutar_resumen_ejecutivo(ticker_input)
-            
-        elif seccion_actual == "🔎 Análisis Fundamental":
-            ejecutar_analisis_fundamental(ticker_input)
-            
-        elif seccion_actual == "📈 Técnico y Opciones":
-            ejecutar_tecnico_y_opciones(ticker_input)
-            
-        elif seccion_actual == "🌍 Radar Macro y Sectores":
-            ejecutar_radar_macro(ticker_input, ticker_competidor)
-            
-        elif seccion_actual == "🧠 Auditoría Forense":
-            ejecutar_auditoria_forense(ticker_input)
+    elif seccion_actual == "🔎 Análisis Fundamental":
+        ejecutar_analisis_fundamental(ticker_input)
+        
+    elif seccion_actual == "📈 Técnico y Opciones":
+        ejecutar_tecnico_y_opciones(ticker_input)
+        
+    elif seccion_actual == "🌍 Radar Macro y Sectores":
+        ejecutar_radar_macro(ticker_input, ticker_competidor)
+        
+    elif seccion_actual == "🧠 Auditoría Forense":
+        ejecutar_auditoria_forense(ticker_input)
 
-        elif seccion_actual == "🔮 Proyección IA y Catalizadores":
-            ejecutar_proyeccion(ticker_input)
+    elif seccion_actual == "🔮 Proyección IA y Catalizadores":
+        ejecutar_proyeccion(ticker_input)
 
-        elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
-            ejecutar_maquina_del_tiempo(ticker_input)
-            
-        elif seccion_actual == "🚀 Radar Multibaggers (Small/Mid Caps)":
-            ejecutar_radar_multibagger(ticker_input)
-            
-        elif seccion_actual == "🕵️‍♂️ Rastreador de Insiders (SEC)":
-            ejecutar_rastreador_insiders(ticker_input)
+    elif seccion_actual == "⏳ Máquina del Tiempo (Backtest)":
+        ejecutar_maquina_del_tiempo(ticker_input)
+        
+    elif seccion_actual == "🚀 Radar Multibaggers (Small/Mid Caps)":
+        ejecutar_radar_multibagger(ticker_input)
+        
+    elif seccion_actual == "🕵️‍♂️ Rastreador de Insiders (SEC)":
+        ejecutar_rastreador_insiders(ticker_input)
                            
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
