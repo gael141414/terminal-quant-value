@@ -6,7 +6,7 @@ import plotly.express as px
 # Importamos gráficos que pudieras tener de comparativas
 from charts import plot_termometro_macro, plot_radar_comparativo 
 
-def ejecutar_radar_macro(ticker_input, ticker_competidor=""):
+def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
     """Analiza el entorno macroeconómico, comparativas sectoriales y head-to-head."""
     st.markdown(f"### 🌍 Radar Macro y Competidores: {ticker_input}")
     
