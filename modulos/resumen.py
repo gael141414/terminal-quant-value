@@ -7,7 +7,7 @@ import plotly.express as px
 # Importa tus gráficos personalizados si los usas aquí
 from charts import plot_dashboard_interactivo, plot_calidad_beneficios 
 
-def ejecutar_resumen_ejecutivo(ticker_input):
+def ejecutar_resumen_ejecutivo(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final):
     """Muestra la vista general, KPIs principales y dashboard interactivo de la empresa."""
     st.markdown(f"### 📊 Resumen Ejecutivo: {ticker_input}")
     
