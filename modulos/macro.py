@@ -2,13 +2,86 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
+import google.generativeai as genai
+import urllib.request
+import xml.etree.ElementTree as ET
+from textblob import TextBlob
 
-# Importamos gráficos que pudieras tener de comparativas
-from charts import plot_termometro_macro, plot_radar_comparativo 
+# Importamos todos los gráficos necesarios para esta pestaña
+from charts import (
+    plot_termometro_macro, 
+    plot_radar_comparativo,
+    plot_rotacion_sectorial,
+    plot_estacionalidad_quant,
+    plot_frontera_eficiente
+)
 
-def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
+@st.cache_data(ttl=3600, show_spinner=False)
+def analizar_macro_avanzado():
+    """Descarga commodities, ratios institucionales y noticias RSS en crudo"""
+    def obtener_precio_seguro(ticker_symbol):
+        try:
+            data = yf.Ticker(ticker_symbol).history(period="5d")
+            if not data.empty: return float(data['Close'].iloc[-1])
+        except: pass
+        return 0.0
+
+    irx = obtener_precio_seguro('^IRX')       
+    tnx = obtener_precio_seguro('^TNX')       
+    oro = obtener_precio_seguro('GC=F')       
+    petroleo = obtener_precio_seguro('CL=F')  
+    dxy = obtener_precio_seguro('DX-Y.NYB')   
+    cobre = obtener_precio_seguro('HG=F')
+    xly = obtener_precio_seguro('XLY') 
+    xlp = obtener_precio_seguro('XLP') 
+    spy = obtener_precio_seguro('SPY') 
+    rsp = obtener_precio_seguro('RSP') 
+
+    spread_curva = tnx - irx if tnx > 0 and irx > 0 else 0
+    ratio_cobre_oro = (cobre / oro) * 100 if oro > 0 else 0
+    ratio_riesgo = xly / xlp if xlp > 0 else 0
+    amplitud_mercado = rsp / spy if spy > 0 else 0
+
+    titulares_macro = []
+    polaridad_media = 0
+    polaridad_total = 0
+    
+    try:
+        url = "https://feeds.finance.yahoo.com/rss/2.0/headline?s=SPY&region=US&lang=en-US"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            xml_data = response.read()
+        
+        root = ET.fromstring(xml_data)
+        
+        for item in root.findall('./channel/item')[:6]:
+            titulo = item.find('title').text
+            enlace = item.find('link').text
+            
+            polaridad = TextBlob(titulo).sentiment.polarity
+            estado = "Neutral ⚖️"
+            if polaridad > 0.05: estado = "Alcista 🟢"
+            elif polaridad < -0.05: estado = "Bajista 🔴"
+            
+            polaridad_total += polaridad
+            titulares_macro.append({"Titular": titulo, "Link": enlace, "Sentimiento": estado})
+            
+        if titulares_macro:
+            polaridad_media = polaridad_total / len(titulares_macro)
+    except Exception as e:
+        pass
+
+    return {
+        "spread_curva": spread_curva, "oro": oro, "petroleo": petroleo, 
+        "dxy": dxy, "cobre": cobre, "ratio_cobre_oro": ratio_cobre_oro,
+        "ratio_riesgo": ratio_riesgo, "amplitud_mercado": amplitud_mercado,
+        "noticias": titulares_macro, "polaridad": polaridad_media
+    }
+
+# 🛠️ CORRECCIÓN DE SYNTAX: Retirado el ="" del ticker_competidor
+def ejecutar_radar_macro(ticker_input, ticker_competidor, df_sectores=None):
     """Analiza el entorno macroeconómico, comparativas sectoriales y head-to-head."""
-    st.markdown(f"### 🌍 Radar Macro y Competidores: {ticker_input}")
+    st.markdown(f"### 🌍 Radar Macro y Sectores: {ticker_input}")
 
     if df_sectores is not None and not df_sectores.empty:
         st.markdown("#### 🔄 Rotación Sectorial (Último Mes)")
@@ -20,30 +93,25 @@ def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
     with st.expander("🌍 Radar Macro: ¿Dónde está fluyendo el dinero? (Rotación Sectorial)", expanded=False):
         st.markdown("Los grandes fondos de inversión rotan su capital constantemente. Aquí puedes ver qué sectores están calentándose y cuáles se están quedando atrás.")
         
-        with st.spinner("Mapeando el mercado global..."):
-            df_sectores = analizar_rotacion_sectores()
+        if df_sectores is not None and not df_sectores.empty:
+            col_sec1, col_sec2 = st.columns([1, 1.5])
             
-            if df_sectores is not None and not df_sectores.empty:
-                # Separamos en 2 columnas: la tabla y el gráfico
-                col_sec1, col_sec2 = st.columns([1, 1.5])
+            with col_sec1:
+                st.dataframe(
+                    df_sectores.set_index("Sector").style.background_gradient(subset=['1 Mes (%)', '3 Meses (%)'], cmap='RdYlGn'),
+                    height=350,
+                    use_container_width=True
+                )
+            
+            with col_sec2:
+                fig_sectores = plot_rotacion_sectorial(df_sectores)
+                st.plotly_chart(fig_sectores, use_container_width=True)
                 
-                with col_sec1:
-                    st.dataframe(
-                        df_sectores.set_index("Sector").style.background_gradient(subset=['1 Mes (%)', '3 Meses (%)'], cmap='RdYlGn'),
-                        height=350,
-                        use_container_width=True
-                    )
-                
-                with col_sec2:
-                    fig_sectores = plot_rotacion_sectorial(df_sectores)
-                    st.plotly_chart(fig_sectores, use_container_width=True)
-                    
-                # Damos un insight rápido
-                mejor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector']
-                peor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector']
-                st.info(f"💡 **Insight Macro:** En los últimos 30 días, el capital institucional está rotando agresivamente hacia **{mejor_sector}**, mientras abandona **{peor_sector}**.")
+            mejor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector']
+            peor_sector = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector']
+            st.info(f"💡 **Insight Macro:** En los últimos 30 días, el capital institucional está rotando agresivamente hacia **{mejor_sector}**, mientras abandona **{peor_sector}**.")
 
-    # ======== TAB 9 ========
+    # ======== TAB 9: ESTACIONALIDAD ========
     st.markdown("### 🎲 Probabilidad y Estacionalidad (Los últimos 20 años)")
     st.caption("Los fondos Quant no adivinan, cuentan cartas. Este mapa de calor analiza la historia completa de la acción para decirte en qué meses tienes las probabilidades matemáticas a tu favor.")
     
@@ -57,18 +125,16 @@ def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
             st.markdown("---")
             st.markdown("""
             **💡 ¿Cómo usar esta ventaja injusta?**
-            *   **Barras Verdes (>60%):** En estos meses, jugar a la baja (cortos) es un suicidio estadístico.
-            *   **Barras Rojas (<40%):** Meses de purga. Es el momento perfecto para guardar liquidez y cazar chollos a final de mes.
-            *   *Ejemplo clásico:* Muchas tecnológicas (como Apple) sufren en Septiembre y vuelan en Octubre/Noviembre tras presentar resultados.
+            * **Barras Verdes (>60%):** En estos meses, jugar a la baja (cortos) es un suicidio estadístico.
+            * **Barras Rojas (<40%):** Meses de purga. Es el momento perfecto para guardar liquidez y cazar chollos a final de mes.
             """)
         else:
             st.warning(diagnostico_estacional)
 
-    # ======== TAB 6 ========
+    # ======== TAB 6: FRONTERA EFICIENTE ========
     st.markdown("### ⚖️ Laboratorio Quant: Optimización de Cartera")
-    st.caption("Introduce al menos 3 tickers separados por comas. El algoritmo simulará 2,000 combinaciones para encontrar los pesos exactos que maximizan tu rentabilidad y minimizan la volatilidad (Modelo Markowitz).")
+    st.caption("Introduce al menos 3 tickers separados por comas. El algoritmo simulará 2,000 combinaciones para encontrar los pesos exactos que maximizan tu rentabilidad (Modelo Markowitz).")
     
-    # Input del usuario para los tickers de la cartera
     tickers_cartera = st.text_input("Tickers de tu Cartera (Ej: AAPL, KO, JNJ, V, XOM):", value="AAPL, MSFT, KO, JNJ, V")
     
     if st.button("🚀 Optimizar Pesos (Correr Monte Carlo)"):
@@ -88,80 +154,60 @@ def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
                         
                     with c_opt2:
                         st.markdown("#### 🎯 Asignación Óptima")
-                        st.success("Para conseguir el mejor Ratio Sharpe (Riesgo/Beneficio), el modelo matemático recomienda dividir tu capital exactamente así:")
-                        
-                        # Crear barras visuales para los pesos
+                        st.success("Para conseguir el mejor Ratio Sharpe, el modelo matemático recomienda:")
                         for tick, peso in pesos_rec.items():
-                            if peso > 1.0: # Solo mostrar si tiene más de un 1%
+                            if peso > 1.0:
                                 st.write(f"**{tick}:** {peso}%")
                                 st.progress(peso / 100)
 
-    # ======== TAB 7 ========
+    # ======== TAB 7: MACRO INSTITUCIONAL ========
     st.markdown("### 🌍 Visión Macro Institucional")
-    st.caption("Analizando el flujo del 'Smart Money'. Los grandes fondos no miran las noticias, miran cómo se mueve el capital entre activos refugio y activos de riesgo.")
+    st.caption("Analizando el flujo del 'Smart Money'. Los grandes fondos no miran las noticias, miran cómo se mueve el capital.")
     
     with st.spinner("Descargando métricas globales e índices adelantados..."):
         fig_macro, diagnostico_macro = plot_termometro_macro()
         
         if fig_macro:
-            # 1. Termómetro Principal
             st.plotly_chart(fig_macro, use_container_width=True)
             
-            # Extracción del Diccionario de Datos
             datos_macro = analizar_macro_avanzado()
             
             st.markdown("---")
-            
             st.markdown("#### 🧭 Dinámicas de Mercado (Smart Money Ratios)")
             col_r1, col_r2, col_r3, col_r4 = st.columns(4)
             
-            # Curva de Tipos
             spread = datos_macro['spread_curva']
-            est_curva = "Invertida 🚨" if spread < 0 else "Normal 🟢"
-            col_r1.metric("Curva Tipos (10Y-3M)", f"{spread:+.2f} pts", est_curva, delta_color="inverse" if spread < 0 else "normal")
+            col_r1.metric("Curva Tipos (10Y-3M)", f"{spread:+.2f} pts", "Invertida 🚨" if spread < 0 else "Normal 🟢", delta_color="inverse" if spread < 0 else "normal")
             
-            # Ratio Riesgo (Consumo)
             r_riesgo = datos_macro['ratio_riesgo']
-            est_riesgo = "Apetito (Risk-On) 🐂" if r_riesgo > 2.2 else "Miedo (Risk-Off) 🐻"
-            col_r2.metric("Apetito al Riesgo (XLY/XLP)", f"{r_riesgo:.2f}x", est_riesgo, delta_color="normal" if r_riesgo > 2.2 else "inverse")
+            col_r2.metric("Apetito Riesgo (XLY/XLP)", f"{r_riesgo:.2f}x", "Apetito 🐂" if r_riesgo > 2.2 else "Miedo 🐻", delta_color="normal" if r_riesgo > 2.2 else "inverse")
             
-            # Dr. Cobre vs Oro
             r_cu_au = datos_macro['ratio_cobre_oro']
-            est_cu = "Expansión 🏭" if r_cu_au > 0.18 else "Contracción 📉"
-            col_r3.metric("Dr. Copper (Cobre/Oro)", f"{r_cu_au:.3f}", est_cu, delta_color="normal" if r_cu_au > 0.18 else "inverse")
+            col_r3.metric("Dr. Copper (Cobre/Oro)", f"{r_cu_au:.3f}", "Expansión 🏭" if r_cu_au > 0.18 else "Contracción 📉", delta_color="normal" if r_cu_au > 0.18 else "inverse")
             
-            # Amplitud de Mercado
             amplitud = datos_macro['amplitud_mercado']
-            est_amp = "Mercado Sano 🌲" if amplitud > 0.30 else "Peligro: Concentrado ⚠️"
-            col_r4.metric("Amplitud Mercado (RSP/SPY)", f"{amplitud:.2f}x", est_amp, delta_color="normal" if amplitud > 0.30 else "inverse")
+            col_r4.metric("Amplitud (RSP/SPY)", f"{amplitud:.2f}x", "Sano 🌲" if amplitud > 0.30 else "Peligro ⚠️", delta_color="normal" if amplitud > 0.30 else "inverse")
 
             st.markdown("---")
-            
             st.markdown("#### 🛢️ Inflación y Costes de Capital")
             col_i1, col_i2, col_i3, col_i4 = st.columns(4)
-            
             col_i1.metric("Oro (Refugio)", f"${datos_macro['oro']:,.2f}" if datos_macro['oro'] else "N/A")
             col_i2.metric("Cobre (Industria)", f"${datos_macro['cobre']:,.2f}" if datos_macro['cobre'] else "N/A")
             col_i3.metric("Petróleo WTI (Energía)", f"${datos_macro['petroleo']:,.2f}" if datos_macro['petroleo'] else "N/A")
-            col_i4.metric("Índice Dólar DXY (Divisa)", f"{datos_macro['dxy']:,.2f}" if datos_macro['dxy'] else "N/A")
+            col_i4.metric("Índice Dólar DXY", f"{datos_macro['dxy']:,.2f}" if datos_macro['dxy'] else "N/A")
             
             st.markdown("---")
-            
             st.markdown("#### 🤖 Procesamiento de Noticias (Wall Street Newsfeed)")
             
             c_mac1, c_mac2 = st.columns([1, 2.5])
-            
             pol = datos_macro['polaridad']
             with c_mac1:
                 if pol > 0.05:
                     st.success("##### 🐂 Tono IA: ALCISTA")
-                    st.caption("El procesamiento de lenguaje natural detecta un fuerte optimismo en los titulares de hoy.")
                 elif pol < -0.05:
                     st.error("##### 🐻 Tono IA: BAJISTA")
-                    st.caption("El procesamiento de lenguaje natural detecta pesimismo, cautela o pánico en la prensa.")
                 else:
                     st.info("##### ⚖️ Tono IA: NEUTRAL")
-                    st.caption("Las noticias reflejan un mercado sin dirección clara a la espera de datos clave.")
                     
             with c_mac2:
                 noticias = datos_macro['noticias']
@@ -169,46 +215,38 @@ def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
                     for noti in noticias:
                         st.markdown(f"**{noti['Sentimiento']}** | [{noti['Titular']}]({noti['Link']})")
                 else:
-                    st.warning("⚠️ El servidor de noticias de Yahoo está bloqueando la conexión RSS temporalmente.")
-
+                    st.warning("⚠️ El servidor de noticias está bloqueando la conexión temporalmente.")
         else:
             st.error(f"🚨 Fallo técnico detectado:\n\n{diagnostico_macro}")
 
     # ======== ORÁCULO TÁCTICO IA ========
     st.markdown("---")
     st.markdown("### 🔮 Oráculo Táctico: Playbook de Inversión IA")
-    st.markdown("La Inteligencia Artificial analiza el ciclo económico actual (Curva de tipos, flujos de capital, VIX) y te sugiere cómo balancear tu cartera hoy.")
 
     if st.button("🧠 Generar Playbook Estratégico", use_container_width=True):
-        with st.spinner("La IA está cruzando los datos macroeconómicos e institucionales..."):
+        with st.spinner("La IA está cruzando los datos macroeconómicos..."):
             try:
-                # 1. Recopilamos el contexto de tu terminal
                 spread = datos_macro.get('spread_curva', 0) if 'datos_macro' in locals() else 0
                 r_riesgo = datos_macro.get('ratio_riesgo', 0) if 'datos_macro' in locals() else 0
                 r_cu_au = datos_macro.get('ratio_cobre_oro', 0) if 'datos_macro' in locals() else 0
                 
-                mejor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector'] if 'df_sectores' in locals() and not df_sectores.empty else "Desconocido"
-                peor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector'] if 'df_sectores' in locals() and not df_sectores.empty else "Desconocido"
+                mejor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmax()]['Sector'] if df_sectores is not None and not df_sectores.empty else "Desconocido"
+                peor_sec = df_sectores.loc[df_sectores['1 Mes (%)'].idxmin()]['Sector'] if df_sectores is not None and not df_sectores.empty else "Desconocido"
 
-                # 2. Diseñamos el Prompt Cuantitativo
                 prompt_oraculo = f"""
-                Eres el Estratega Jefe Macro (Chief Investment Officer) de un Hedge Fund Cuantitativo.
-                Tu trabajo es decirle a los clientes exactamente qué hacer con su dinero en este momento preciso basándote ESTRICTAMENTE en estos datos de mercado actuales:
-                
-                - Curva de Tipos (10Y-3M): {spread:+.2f} pts (Si es negativo, alerta extrema de recesión/riesgo).
-                - Apetito al Riesgo (Consumo Discrecional vs Básico): {r_riesgo:.2f}x (Si es < 2.0, el mercado está a la defensiva).
-                - Cobre vs Oro (Termómetro industrial): {r_cu_au:.3f} (Si sube, hay expansión. Si baja, hay miedo y se refugian en oro).
-                - Momentum Sectorial: El dinero está entrando en {mejor_sec} y huyendo de {peor_sec}.
+                Eres el Estratega Jefe Macro de un Hedge Fund Cuantitativo.
+                Tu trabajo es decirle a los clientes qué hacer basándote en estos datos de mercado:
+                - Curva de Tipos: {spread:+.2f} pts
+                - Apetito al Riesgo: {r_riesgo:.2f}x 
+                - Cobre vs Oro: {r_cu_au:.3f} 
+                - Momentum: El dinero entra en {mejor_sec} y huye de {peor_sec}.
 
-                Escribe un "Playbook Táctico" (Manual de Acción) dividido en estas 3 secciones:
-                1. 🌡️ **Diagnóstico del Ciclo:** ¿En qué fase estamos? (Expansión, Desaceleración, Miedo, Euforia). Usa los datos para justificarlo.
-                2. 🎯 **Asignación de Activos (Asset Allocation):** ¿Es momento de estar líquidos (Cash), comprar Bonos (Renta Fija), acumular Oro, o ir largos en Acciones? 
-                3. ⚔️ **Estrategia Táctica:** ¿Recomiendas comprar acciones con descuento ahora mismo, usar derivados (opciones Put para cubrirse), o subirse al momentum de {mejor_sec}?
-
-                Tono: Profesional, directo, sin rodeos, como si hablaras con un gestor de patrimonio.
+                Escribe un "Playbook Táctico":
+                1. 🌡️ Diagnóstico del Ciclo.
+                2. 🎯 Asset Allocation recomendado.
+                3. ⚔️ Estrategia Táctica actual.
                 """
 
-                # 3. Llamamos al cerebro de Gemini
                 modelo_oraculo = None
                 for m in genai.list_models():
                     if 'generateContent' in m.supported_generation_methods:
@@ -218,11 +256,10 @@ def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
                 if modelo_oraculo:
                     model = genai.GenerativeModel(modelo_oraculo)
                     response = model.generate_content(prompt_oraculo)
-                    
-                    st.success("✅ Playbook generado con éxito basándose en datos de mercado en tiempo real.")
+                    st.success("✅ Playbook generado con éxito.")
                     with st.expander("📖 LEER PLAYBOOK TÁCTICO DE LA IA", expanded=True):
                         st.markdown(response.text)
                 else:
-                    st.error("Error de conexión con la API de la IA.")
+                    st.error("Error de conexión con la IA.")
             except Exception as e:
-                st.error(f"Faltan datos macroeconómicos para generar el oráculo. Espera a que carguen los gráficos superiores. Detalle: {e}")
+                st.error(f"Error generando el oráculo: {e}")
