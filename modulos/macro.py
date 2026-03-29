@@ -9,6 +9,12 @@ from charts import plot_termometro_macro, plot_radar_comparativo
 def ejecutar_radar_macro(ticker_input, ticker_competidor="", df_sectores):
     """Analiza el entorno macroeconómico, comparativas sectoriales y head-to-head."""
     st.markdown(f"### 🌍 Radar Macro y Competidores: {ticker_input}")
+
+    if df_sectores is not None and not df_sectores.empty:
+        st.markdown("#### 🔄 Rotación Sectorial (Último Mes)")
+        st.dataframe(df_sectores, use_container_width=True)
+    else:
+        st.info("Datos de rotación sectorial no disponibles en este momento.")
     
     # ======== RADAR ROTACIÓN SECTORIAL ========
     with st.expander("🌍 Radar Macro: ¿Dónde está fluyendo el dinero? (Rotación Sectorial)", expanded=False):
