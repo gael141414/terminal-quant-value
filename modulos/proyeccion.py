@@ -56,6 +56,8 @@ def ejecutar_proyeccion(ticker_input):
                   "precio_oso": 90.00
                 }}
                 {separador}
+
+                REGLA CRÍTICA DE PROGRAMACIÓN: NO uses comillas dobles (") bajo ningún concepto DENTRO de los textos del JSON. Si necesitas entrecomillar algo, usa obligatoriamente comillas simples (').
                 """
                 
                 modelo_disponible = None
@@ -76,6 +78,14 @@ def ejecutar_proyeccion(ticker_input):
                         match = re.search(r'(\{.*?\})', respuesta_ia, re.DOTALL)
                         
                     if match:
+                        texto_json = match.group(1)
+                        texto_json = texto_json.replace("'\n", "',\n").strip() 
+                        
+                        try:
+                            datos_json = json.loads(texto_json, strict=False)
+                        except json.JSONDecodeError:
+                            import ast
+                            datos_json = ast.literal_eval(texto_json)
                         datos_json = json.loads(match.group(1).replace("'", '"'))
                         
                         p_toro = float(datos_json.get("precio_toro", precio_actual * 1.2))
