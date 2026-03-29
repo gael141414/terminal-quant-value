@@ -9,6 +9,7 @@ from income_analyzer import analizar_cuenta_resultados
 from balance_analyzer import analizar_balance
 from cashflow_analyzer import analizar_flujo_efectivo
 from valuator import valorar_empresa
+from modulos.utils import obtener_valoracion_sectorial
 
 def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val):
     earnings_yield = res_val.get('earnings_yield', 0) if res_val else 0
