@@ -1,6 +1,58 @@
 import streamlit as st
 import yfinance as yf
 import streamlit.components.v1 as components
+from textblob import TextBlob
+import pandas as pd
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def obtener_transacciones_insiders(ticker):
+    """Descarga las últimas compras/ventas de los directivos (Form 4)"""
+    try:
+        ticker_yf = yf.Ticker(ticker)
+        transacciones = ticker_yf.insider_transactions
+        
+        if transacciones is not None and not transacciones.empty:
+            cols_deseadas = ['Start Date', 'Insider', 'Position', 'Transaction', 'Value', 'Shares']
+            cols_presentes = [c for c in cols_deseadas if c in transacciones.columns]
+            
+            df_limpio = transacciones[cols_presentes].copy()
+            if 'Start Date' in df_limpio.columns:
+                df_limpio['Start Date'] = pd.to_datetime(df_limpio['Start Date']).dt.strftime('%Y-%m-%d')
+                
+            return df_limpio.head(15)
+        return None
+    except Exception:
+        return None
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def analizar_sentimiento_noticias(ticker):
+    """Extrae las últimas noticias y usa NLP para medir el sentimiento"""
+    try:
+        noticias = yf.Ticker(ticker).news
+        if not noticias: return None, 0
+
+        resultados = []
+        polaridad_total = 0
+        
+        for noticia in noticias[:5]:
+            titulo = noticia.get('title', '')
+            editor = noticia.get('publisher', '')
+            enlace = noticia.get('link', '')
+            
+            analisis = TextBlob(titulo)
+            polaridad = analisis.sentiment.polarity 
+            
+            estado = "Neutral ⚖️"
+            if polaridad > 0.15: estado = "Alcista 🟢"
+            elif polaridad < -0.15: estado = "Bajista 🔴"
+            
+            polaridad_total += polaridad
+            resultados.append({"Titular": titulo, "Fuente": editor, "Sentimiento": estado, "Polaridad": polaridad, "Link": enlace})
+            
+        polaridad_media = polaridad_total / len(resultados) if resultados else 0
+        return resultados, polaridad_media
+    except Exception:
+        return None, 0
 
 def renderizar_grafico_tradingview(ticker):
     """Inyecta el widget avanzado y nativo de TradingView interactivo"""
