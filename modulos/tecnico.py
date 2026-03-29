@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import streamlit.components.v1 as components
 from charts import plot_flujo_opciones, plot_grafico_tecnico_pro
-from modulos.utils import obtener_datos_directiva
+from modulos.utils import obtener_datos_directiva, render_tradingview_widget
 
 # Traemos la función de TradingView que creamos en la Fase 1
 def renderizar_grafico_tradingview(ticker):
