@@ -61,3 +61,57 @@ def obtener_datos_directiva(ticker):
         return info.get('heldPercentInsiders', 0) * 100, info.get('heldPercentInstitutions', 0) * 100, info.get('shortRatio', 0)
     except:
         return 0, 0, 0
+
+def escanear_vulnerabilidades(res_is, res_bs, res_cf):
+    """Escanea los estados financieros en busca de Red Flags críticas."""
+    alertas = []
+    
+    def get_last(df, col):
+        if df is not None and col in df.columns:
+            s = df[col].dropna()
+            return s.iloc[-1] if not s.empty else None
+        return None
+
+    # 1. Riesgo de Quiebra (Deuda)
+    deuda_cap = get_last(res_bs["ratios"], "Deuda / Capital")
+    if deuda_cap and deuda_cap > 1.2:
+        alertas.append(f"🚨 **Apalancamiento Peligroso:** Deuda altísima ({deuda_cap:.2f}x el capital).")
+
+    # 2. Hemorragia de Efectivo
+    fcf = get_last(res_cf["ratios"], "Free Cash Flow (B USD)")
+    if fcf and fcf < 0:
+        alertas.append(f"🔥 **Quema de Caja:** El Free Cash Flow es negativo (${fcf:.2f}B).")
+
+    # 3. Rentabilidad Basura (Márgenes)
+    margen_neto = get_last(res_is["ratios"], "Margen Neto %")
+    if margen_neto and margen_neto < 5:
+        alertas.append(f"⚠️ **Márgenes Críticos:** El margen neto es solo del {margen_neto:.1f}%.")
+
+    # 4. Destrucción de Valor (ROIC)
+    roic = get_last(res_bs["ratios"], "ROIC %")
+    if roic and roic < 7:
+        alertas.append(f"📉 **Destrucción de Capital:** El ROIC ({roic:.1f}%) es menor que el coste de capital promedio.")
+
+    return alertas
+
+def render_tradingview_widget(ticker):
+    """Inyecta el terminal avanzado interactivo de TradingView mediante iframe"""
+    ticker_tv = ticker.replace("-", ".") 
+    html_code = f"""
+    <div class="tradingview-widget-container" style="height:100%;width:100%">
+      <div id="tradingview_terminal" style="height:calc(100% - 32px);width:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+      new TradingView.widget(
+      {{
+      "autosize": true, "symbol": "{ticker_tv}", "interval": "D", "timezone": "exchange",
+      "theme": "dark", "style": "1", "locale": "es", "enable_publishing": false,
+      "backgroundColor": "#0b1426", "gridColor": "#1e3354", "hide_top_toolbar": false,
+      "hide_legend": false, "save_image": false, "container_id": "tradingview_terminal",
+      "toolbar_bg": "#0b1426"
+      }});
+      </script>
+    </div>
+    """
+    import streamlit.components.v1 as components
+    components.html(html_code, height=600)
