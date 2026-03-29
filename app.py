@@ -1069,7 +1069,7 @@ else:
         ejecutar_radar_macro(ticker_input, ticker_competidor, df_sectores)
         
     elif seccion_actual == "🧠 Auditoría Forense":
-        ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df)
+        ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val)
 
     elif seccion_actual == "🔮 Proyección IA y Catalizadores":
         ejecutar_proyeccion(ticker_input)
