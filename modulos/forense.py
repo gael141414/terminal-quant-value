@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from charts import plot_beneish_m_score
+from charts import plot_beneish_m_score, plot_auditoria_forense
 
 def ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val):
     """Detector de manipulación contable y riesgo de quiebra (Altman Z-Score y Beneish M-Score)"""
