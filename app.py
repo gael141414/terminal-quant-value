@@ -44,6 +44,7 @@ from modulos.macro import ejecutar_radar_macro
 from modulos.reloj_macro import ejecutar_reloj_macro
 from modulos.liquidez import ejecutar_monitor_liquidez
 from modulos.cisnes_negros import ejecutar_simulador_crisis
+from modulos.coberturas import ejecutar_radar_coberturas
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -832,6 +833,7 @@ with st.sidebar:
         "🕰️ Reloj Económico (Regímenes)",
         "🚰 Monitor de Liquidez (FED)",
         "🦢 Test Cisnes Negros (Crisis)",
+        "🛡️ Radar de Coberturas (Hedging)",
         "🧠 Auditoría Forense",
         "🔮 Proyección IA y Catalizadores",
         "⏳ Máquina del Tiempo (Backtest)",
@@ -1024,6 +1026,9 @@ else:
 
     elif seccion_actual == "🦢 Test Cisnes Negros (Crisis)":
         ejecutar_simulador_crisis(ticker_input)
+
+    elif seccion_actual == "🛡️ Radar de Coberturas (Hedging)":
+        ejecutar_radar_coberturas(ticker_input)
                            
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
