@@ -84,4 +84,3 @@ def ejecutar_resumen_ejecutivo(ticker_input, is_df, bs_df, cf_df, res_is, res_bs
             st.markdown(f"- {alerta}")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    st.info(f"Mostrando Resumen Ejecutivo para {ticker_input}... (Asegúrate de modularizar esta sección).")
