@@ -26,7 +26,7 @@ from charts import (
     plot_football_field,
     plot_proyeccion_dividendos
 )
-def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final):
+def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final, ticker_competidor):
     """Analiza los estados financieros, márgenes, deuda y valoración intrínseca."""
     st.markdown(f"### 🔎 Análisis Fundamental y Valoración: {ticker_input}")
 
