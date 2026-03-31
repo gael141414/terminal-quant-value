@@ -495,26 +495,40 @@ def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res
         
         col_m1, col_m2, col_m3 = st.columns(3)
         
+        # Blindaje de seguridad para asegurar que precio_actual es un número
+        p_actual_seguro = precio_actual if isinstance(precio_actual, (int, float)) else 0
+        
         # 1. Graham
-        # Blindaje contra fallos de red en la nube (NoneType)
-        if isinstance(precio_actual, (int, float)) and isinstance(v_graham, (int, float)) and v_graham > 0:
-            margen_graham = ((precio_actual - v_graham) / v_graham) * 100
+        v_graham = res_val.get('graham_value', 0) if res_val else 0
+        if p_actual_seguro > 0 and isinstance(v_graham, (int, float)) and v_graham > 0:
+            margen_graham = ((p_actual_seguro - v_graham) / v_graham) * 100
         else:
             margen_graham = 0
+            
         color_g = "inverse" if margen_graham > 0 else "normal"
         estado_g = "Cara" if margen_graham > 0 else "Barata"
         col_m1.metric("Benjamin Graham (Value)", f"${v_graham:.2f}", f"{estado_g} ({margen_graham:+.1f}%)", delta_color=color_g)
         col_m1.caption("Combina beneficios y crecimiento ajustado a los bonos del tesoro actuales.")
         
         # 2. Peter Lynch
-        margen_lynch = ((precio_actual - v_lynch) / v_lynch) * 100 if v_lynch > 0 else 0
+        v_lynch = res_val.get('lynch_value', 0) if res_val else 0
+        if p_actual_seguro > 0 and isinstance(v_lynch, (int, float)) and v_lynch > 0:
+            margen_lynch = ((p_actual_seguro - v_lynch) / v_lynch) * 100
+        else:
+            margen_lynch = 0
+            
         color_l = "inverse" if margen_lynch > 0 else "normal"
         estado_l = "Cara" if margen_lynch > 0 else "Barata"
         col_m2.metric("Peter Lynch (Crecimiento)", f"${v_lynch:.2f}", f"{estado_l} ({margen_lynch:+.1f}%)", delta_color=color_l)
         col_m2.caption("Asume que el PER justo de una empresa debería ser igual a su crecimiento (PEG=1).")
         
         # 3. EPV
-        margen_epv = ((precio_actual - v_epv) / v_epv) * 100 if v_epv > 0 else 0
+        v_epv = res_val.get('epv_value', 0) if res_val else 0
+        if p_actual_seguro > 0 and isinstance(v_epv, (int, float)) and v_epv > 0:
+            margen_epv = ((p_actual_seguro - v_epv) / v_epv) * 100
+        else:
+            margen_epv = 0
+            
         col_m3.metric("EPV (Cero Crecimiento)", f"${v_epv:.2f}")
         col_m3.caption(f"Valor 'suelo'. Lo que vale la empresa si sus beneficios se estancan y no vuelve a crecer nunca más.")
 
