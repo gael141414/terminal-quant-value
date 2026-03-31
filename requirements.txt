@@ -10,3 +10,4 @@ google-generativeai
 requests
 edgartools
 matplotlib
+pandas-datareader
