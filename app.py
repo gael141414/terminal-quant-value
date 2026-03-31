@@ -41,6 +41,7 @@ from modulos.resumen import ejecutar_resumen_ejecutivo
 from modulos.fundamental import ejecutar_analisis_fundamental
 from modulos.tecnico import ejecutar_tecnico_y_opciones
 from modulos.macro import ejecutar_radar_macro
+from modulos.reloj_macro import ejecutar_reloj_macro
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -826,6 +827,7 @@ with st.sidebar:
         "🔎 Análisis Fundamental",
         "📈 Técnico y Opciones",
         "🌍 Radar Macro y Sectores",
+        "🕰️ Reloj Económico (Regímenes)",
         "🧠 Auditoría Forense",
         "🔮 Proyección IA y Catalizadores",
         "⏳ Máquina del Tiempo (Backtest)",
@@ -902,7 +904,8 @@ with st.sidebar:
 herramientas_independientes = [
     "🤖 Robo-Advisor & Test Perfil", 
     "🌐 Escáner Global (Screener)", 
-    "🩻 Radiografía de ETFs (X-Ray)"
+    "🩻 Radiografía de ETFs (X-Ray)",
+    "🕰️ Reloj Económico (Regímenes)"
 ]
 
 # CASOS INDEPENDIENTES (No necesitan darle al botón del sidebar)
@@ -911,8 +914,11 @@ if seccion_actual in herramientas_independientes:
     # RUTA A: HERRAMIENTAS QUE NO NECESITAN BOTÓN DE "ANALIZAR"
     # ---------------------------------------------------------
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    if seccion_actual == "🤖 Robo-Advisor & Test Perfil":
+
+    if seccion_actual == "🕰️ Reloj Económico (Regímenes)":
+        ejecutar_reloj_macro()
+        
+    elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
         ejecutar_roboadvisor()
 
     elif seccion_actual == "🌐 Escáner Global (Screener)":
