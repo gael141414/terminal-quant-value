@@ -984,7 +984,7 @@ else:
         ejecutar_resumen_ejecutivo(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final)
         
     elif seccion_actual == "🔎 Análisis Fundamental":
-        ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val)        
+        ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final)     
     
     elif seccion_actual == "📈 Técnico y Opciones":
         ejecutar_tecnico_y_opciones(ticker_input)
