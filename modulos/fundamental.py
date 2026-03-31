@@ -660,7 +660,4 @@ def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res
             else:
                 st.info(texto_dgi) # Muestra el mensaje de error si la empresa no paga dividendo
     else:
-        st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")
-    st.info("Módulo de Análisis Fundamental en construcción...")
-    
-    
+        st.warning("Se necesita un precio de mercado actual para calcular el Yield on Cost.")    
