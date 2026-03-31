@@ -10,7 +10,7 @@ from balance_analyzer import analizar_balance
 from cashflow_analyzer import analizar_flujo_efectivo
 from valuator import valorar_empresa
 from modulos.utils import obtener_valoracion_sectorial
-from charts import plot_tsr_vs_sp500
+from charts import plot_tsr_vs_sp500, plot_dashboard_interactivo
 
 def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val):    
     """Analiza los estados financieros, márgenes, deuda y valoración intrínseca."""
