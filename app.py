@@ -42,6 +42,8 @@ from modulos.fundamental import ejecutar_analisis_fundamental
 from modulos.tecnico import ejecutar_tecnico_y_opciones
 from modulos.macro import ejecutar_radar_macro
 from modulos.reloj_macro import ejecutar_reloj_macro
+from modulos.liquidez import ejecutar_monitor_liquidez
+from modulos.cisnes_negros import ejecutar_simulador_crisis
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -828,6 +830,8 @@ with st.sidebar:
         "📈 Técnico y Opciones",
         "🌍 Radar Macro y Sectores",
         "🕰️ Reloj Económico (Regímenes)",
+        "🚰 Monitor de Liquidez (FED)",
+        "🦢 Test Cisnes Negros (Crisis)",
         "🧠 Auditoría Forense",
         "🔮 Proyección IA y Catalizadores",
         "⏳ Máquina del Tiempo (Backtest)",
@@ -906,6 +910,7 @@ herramientas_independientes = [
     "🌐 Escáner Global (Screener)", 
     "🩻 Radiografía de ETFs (X-Ray)",
     "🕰️ Reloj Económico (Regímenes)"
+    "🚰 Monitor de Liquidez (FED)"
 ]
 
 # CASOS INDEPENDIENTES (No necesitan darle al botón del sidebar)
@@ -926,6 +931,9 @@ if seccion_actual in herramientas_independientes:
 
     elif seccion_actual == "🩻 Radiografía de ETFs (X-Ray)":
         ejecutar_radiografia_etf(etf_input)
+
+    elif seccion_actual == "🚰 Monitor de Liquidez (FED)":
+        ejecutar_monitor_liquidez()
 
 # CASOS DE EMPRESA (Requieren pulsar el botón del sidebar la primera vez)
 else:
@@ -1013,6 +1021,9 @@ else:
         
     elif seccion_actual == "🕵️‍♂️ Rastreador de Insiders (SEC)":
         ejecutar_rastreador_insiders(ticker_input)
+
+    elif seccion_actual == "🦢 Test Cisnes Negros (Crisis)":
+        ejecutar_simulador_crisis(ticker_input)
                            
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
