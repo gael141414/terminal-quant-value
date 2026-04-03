@@ -77,30 +77,23 @@ def ejecutar_tecnico_y_opciones(ticker_input):
         fig_opciones, diag_opciones = plot_flujo_opciones(ticker_input)
         
         if fig_opciones:
-            c_opt1, c_opt2 = st.columns([1.5, 1])
+            st.markdown("#### 🕵️ El Rastro del Dinero (Opciones)")
+            st.plotly_chart(fig_opciones, use_container_width=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            with c_opt1:
-                st.markdown("#### 📈 Terminal Técnico (TradingView Pro)")
-                render_tradingview_widget(ticker_input)
+            if "CODICIA" in diag_opciones:
+                st.success(diag_opciones)
+            elif "MIEDO" in diag_opciones:
+                st.error(diag_opciones)
+            else:
+                st.info(diag_opciones)
                 
-            with c_opt2:
-                st.markdown("#### 🕵️ El Rastro del Dinero (Opciones)")
-                st.plotly_chart(fig_opciones, use_container_width=True)
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                if "CODICIA" in diag_opciones:
-                    st.success(diag_opciones)
-                elif "MIEDO" in diag_opciones:
-                    st.error(diag_opciones)
-                else:
-                    st.info(diag_opciones)
-                    
-                st.markdown("""
-                **💡 Leyenda del Analista:**
-                *   **Calls > Puts:** Mercado fuertemente alcista.
-                *   **Puts > Calls (P/C > 1):** Mercado asustado.
-                *   *Nota contrarian:* Si el P/C es absurdamente alto (ej. > 1.5), a veces indica un "pánico injustificado" y marca el suelo perfecto para comprar.
-                """)
+            st.markdown("""
+            **💡 Leyenda del Analista:**
+            *   **Calls > Puts:** Mercado fuertemente alcista.
+            *   **Puts > Calls (P/C > 1):** Mercado asustado.
+            *   *Nota contrarian:* Si el P/C es absurdamente alto (ej. > 1.5), a veces indica un "pánico injustificado" y marca el suelo perfecto para comprar.
+            """)
         else:
             st.warning(diag_opciones)
 
