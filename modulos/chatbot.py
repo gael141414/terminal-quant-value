@@ -35,7 +35,7 @@ def render_chatbot():
     # 4. Inicializar Modelo y Chat en Session State
     if "oraculo_model" not in st.session_state:
         st.session_state.oraculo_model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro",
+            model_name="gemini-1.5-flash",
             system_instruction=system_instruction
         )
         st.session_state.chat_session = st.session_state.gemini_model.start_chat(history=[])
