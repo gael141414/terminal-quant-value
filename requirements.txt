@@ -11,3 +11,4 @@ requests
 edgartools
 matplotlib
 pandas-datareader
+youtube-transcript-api
