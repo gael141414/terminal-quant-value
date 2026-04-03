@@ -45,6 +45,7 @@ from modulos.reloj_macro import ejecutar_reloj_macro
 from modulos.liquidez import ejecutar_monitor_liquidez
 from modulos.cisnes_negros import ejecutar_simulador_crisis
 from modulos.coberturas import ejecutar_radar_coberturas
+from modulos.chatbot import render_chatbot
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -841,7 +842,8 @@ with st.sidebar:
         "🕵️‍♂️ Rastreador de Insiders (SEC)",
         "🩻 Radiografía de ETFs (X-Ray)",
         "🌐 Escáner Global (Screener)",
-        "🤖 Robo-Advisor & Test Perfil"
+        "🤖 Robo-Advisor & Test Perfil",
+        "🤖 Chatbot Inversor"
     ], label_visibility="collapsed")
 
     st.markdown("---")
@@ -874,7 +876,7 @@ with st.sidebar:
                 etf_input = busqueda_etf.upper()
 
     # CASO 2: HERRAMIENTAS INDEPENDIENTES (El input está en el centro de la pantalla)
-    elif seccion_actual in ["🤖 Robo-Advisor & Test Perfil", "🌐 Escáner Global (Screener)"]:
+    elif seccion_actual in ["🤖 Robo-Advisor & Test Perfil", "🌐 Escáner Global (Screener)", "🤖 Chatbot Inversor"]:
         st.success("👉 Dirígete a la parte central de la pantalla para utilizar esta herramienta.")
 
     # CASO 3: ANÁLISIS DE EMPRESAS (Tu buscador original)
@@ -912,7 +914,8 @@ herramientas_independientes = [
     "🌐 Escáner Global (Screener)", 
     "🩻 Radiografía de ETFs (X-Ray)",
     "🕰️ Reloj Económico (Regímenes)"
-    "🚰 Monitor de Liquidez (FED)"
+    "🚰 Monitor de Liquidez (FED)",
+    "🤖 Chatbot Inversor"
 ]
 
 # CASOS INDEPENDIENTES (No necesitan darle al botón del sidebar)
@@ -936,6 +939,9 @@ if seccion_actual in herramientas_independientes:
 
     elif seccion_actual == "🚰 Monitor de Liquidez (FED)":
         ejecutar_monitor_liquidez()
+
+    elif seccion_actual == "🤖 Chatbot Inversor":
+        render_chatbot()
 
 # CASOS DE EMPRESA (Requieren pulsar el botón del sidebar la primera vez)
 else:
