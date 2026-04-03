@@ -32,10 +32,10 @@ def render_chatbot():
     3. Tu tono es técnico, conservador y centrado en el 'Margen de Seguridad'.
     """
 
-    # 4. Inicializar Modelo y Chat
-    if "gemini_model" not in st.session_state:
-        st.session_state.gemini_model = genai.GenerativeModel(
-            model_name="gemini-1.5-pro-latest",
+    # 4. Inicializar Modelo y Chat en Session State
+    if "oraculo_model" not in st.session_state:
+        st.session_state.oraculo_model = genai.GenerativeModel(
+            model_name="gemini-1.5-pro",
             system_instruction=system_instruction
         )
         st.session_state.chat_session = st.session_state.gemini_model.start_chat(history=[])
