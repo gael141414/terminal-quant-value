@@ -12,3 +12,8 @@ edgartools
 matplotlib
 pandas-datareader
 youtube-transcript-api
+langchain
+langchain-openai
+chromadb
+tiktoken
+pypdf
