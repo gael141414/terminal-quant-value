@@ -46,6 +46,8 @@ from modulos.liquidez import ejecutar_monitor_liquidez
 from modulos.cisnes_negros import ejecutar_simulador_crisis
 from modulos.coberturas import ejecutar_radar_coberturas
 from modulos.chatbot import render_chatbot
+from modulos.consejos import ejecutar_apartado_consejos
+from modulos.predictor import ejecutar_predictor_techos_suelos
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -836,6 +838,8 @@ with st.sidebar:
         "🦢 Test Cisnes Negros (Crisis)",
         "🛡️ Radar de Coberturas (Hedging)",
         "🧠 Auditoría Forense",
+        "💡 Consejos y Mentoría",
+        "🔭 Predictor de Techos/Suelos",
         "🔮 Proyección IA y Catalizadores",
         "⏳ Máquina del Tiempo (Backtest)",
         "🚀 Radar Multibaggers (Small/Mid Caps)",
@@ -915,7 +919,8 @@ herramientas_independientes = [
     "🩻 Radiografía de ETFs (X-Ray)",
     "🕰️ Reloj Económico (Regímenes)"
     "🚰 Monitor de Liquidez (FED)",
-    "🤖 Chatbot Inversor"
+    "🤖 Chatbot Inversor",
+    "💡 Consejos y Mentoría"
 ]
 
 # CASOS INDEPENDIENTES (No necesitan darle al botón del sidebar)
@@ -942,6 +947,9 @@ if seccion_actual in herramientas_independientes:
 
     elif seccion_actual == "🤖 Chatbot Inversor":
         render_chatbot()
+
+    elif seccion_actual == "💡 Consejos y Mentoría":
+        ejecutar_apartado_consejos()
 
 # CASOS DE EMPRESA (Requieren pulsar el botón del sidebar la primera vez)
 else:
@@ -1017,6 +1025,9 @@ else:
         
     elif seccion_actual == "🧠 Auditoría Forense":
         ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val)
+
+    elif seccion_actual == "🔭 Predictor de Techos/Suelos":
+        ejecutar_predictor_techos_suelos(ticker_input)
 
     elif seccion_actual == "🔮 Proyección IA y Catalizadores":
         ejecutar_proyeccion(ticker_input)
