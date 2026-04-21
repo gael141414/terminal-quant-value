@@ -5,22 +5,27 @@ import plotly.graph_objects as go
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def calcular_z_score(ticker):
+    # 1. Protección contra ticker vacío
+    if not ticker or str(ticker).strip() == "":
+        return None
+        
     try:
-        # Descargamos 5 años de datos para medio-largo plazo
-        df = yf.download(ticker, period="5y")['Close']
+        # 2. Descarga robusta usando el objeto Ticker
+        accion = yf.Ticker(ticker)
+        df = accion.history(period="5y")
+        
+        # 3. Comprobar si hay datos y si superan los 200 días
         if df.empty or len(df) < 200:
             return None
             
-        # Transformamos a DataFrame si es una Serie
-        if isinstance(df, pd.Series):
-            df = df.to_frame()
-            df.columns = ['Close']
+        # 4. Asegurar el formato del DataFrame (aislar el Cierre)
+        df = df[['Close']].copy()
 
-        # Matemáticas Cuantitativas: SMA 200 y Desviación Estándar
+        # 5. Matemáticas Cuantitativas: SMA 200 y Desviación Estándar
         df['SMA_200'] = df['Close'].rolling(window=200).mean()
         df['STD_200'] = df['Close'].rolling(window=200).std()
         
-        # Z-Score: ¿A cuántas desviaciones estándar estamos de la media?
+        # 6. Cálculo del Z-Score
         df['Z_Score'] = (df['Close'] - df['SMA_200']) / df['STD_200']
         
         return df.dropna()
