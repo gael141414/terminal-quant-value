@@ -48,6 +48,7 @@ from modulos.coberturas import ejecutar_radar_coberturas
 from modulos.chatbot import render_chatbot
 from modulos.consejos import ejecutar_apartado_consejos
 from modulos.predictor import ejecutar_predictor_techos_suelos
+from modulos.minero_smallcaps import ejecutar_visor_smallcaps
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -839,6 +840,7 @@ with st.sidebar:
         "🛡️ Radar de Coberturas (Hedging)",
         "🧠 Auditoría Forense",
         "💡 Consejos y Mentoría",
+        "⛏️ Minero de Small Caps",
         "🔭 Predictor de Techos/Suelos",
         "🔮 Proyección IA y Catalizadores",
         "⏳ Máquina del Tiempo (Backtest)",
@@ -920,7 +922,8 @@ herramientas_independientes = [
     "🕰️ Reloj Económico (Regímenes)"
     "🚰 Monitor de Liquidez (FED)",
     "🤖 Chatbot Inversor",
-    "💡 Consejos y Mentoría"
+    "💡 Consejos y Mentoría",
+    "⛏️ Minero de Small Caps"
 ]
 
 # CASOS INDEPENDIENTES (No necesitan darle al botón del sidebar)
@@ -950,6 +953,9 @@ if seccion_actual in herramientas_independientes:
 
     elif seccion_actual == "💡 Consejos y Mentoría":
         ejecutar_apartado_consejos()
+
+    elif seccion_actual == "⛏️ Minero de Small Caps":
+        ejecutar_visor_smallcaps()
 
 # CASOS DE EMPRESA (Requieren pulsar el botón del sidebar la primera vez)
 else:
