@@ -17,3 +17,6 @@ langchain-openai
 chromadb
 tiktoken
 pypdf
+sentence-transformers
+langchain-huggingface
+langchain-groq
