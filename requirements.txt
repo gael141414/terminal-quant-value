@@ -20,3 +20,5 @@ pypdf
 sentence-transformers
 langchain-huggingface
 langchain-groq
+pysqlite3-binary
+langchain-community
