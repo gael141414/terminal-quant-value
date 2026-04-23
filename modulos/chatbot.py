@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
 
 # Usamos la clave de Groq en lugar de la de OpenAI
-os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+os.environ["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"] = st.secrets["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"]
 
 @st.cache_resource
 def cargar_motor_chatbot():
