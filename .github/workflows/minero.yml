@@ -33,9 +33,12 @@ jobs:
         run: |
           git config --global user.name "Bot Minero Quant"
           git config --global user.email "bot@valuequant.com"
+          
+          mkdir -p data          
+          touch data/small_caps_oro.csv
+          
           git add data/small_caps_oro.csv
-          git commit -m "🤖 Minero automático: Nuevas Small Caps encontradas" || echo "No hubo cambios en los datos"
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Minero automático: Nuevas Small Caps encontradas" && git push)
 
       - name: 📦 Instalar librerías necesarias
         run: |
