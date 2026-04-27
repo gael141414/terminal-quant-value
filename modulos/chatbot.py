@@ -27,7 +27,7 @@ def cargar_motor_chatbot():
     )
     
     # Llama 3 ultrarrápido por Groq
-    llm = ChatGroq(model="llama-3.1-70b-versatile", temperature=0.2)
+    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
     system_prompt = (
         "Eres un asesor financiero experto e IA de un terminal de inversión de alto nivel. "
