@@ -2,14 +2,27 @@ import yfinance as yf
 import pandas as pd
 import time
 import os
+import requests
 
 def ejecutar_minero():
     print("🚀 Iniciando el Minero Quant de Small Caps...")
-    
+
     # 1. Obtener el Universo (S&P 600 Small Caps de Wikipedia)
     print("📥 Descargando lista de candidatos (S&P 600)...")
     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_600_companies'
-    tablas = pd.read_html(url)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        tablas = pd.read_html(response.text)
+        df_sp600 = tablas[0]
+        tickers = df_sp600['Symbol'].tolist()
+    except Exception as e:
+        print(f"❌ Error al acceder a Wikipedia: {e}")
+        return
+        
     df_sp600 = tablas[0]
     tickers = df_sp600['Symbol'].tolist()
     
