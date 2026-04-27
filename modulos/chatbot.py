@@ -31,13 +31,13 @@ def cargar_motor_chatbot():
 
     system_prompt = (
         "Eres un asesor financiero experto e IA de un terminal de inversión de alto nivel. "
-        "Tu filosofía de inversión se basa en el 'Value Investing' de Warren Buffett "
-        "y en el canal 'Invertir desde 0'. "
-        "Usa la información del contexto para responder. "
-        "IMPORTANTE: Cuando el usuario te pida ejemplos de empresas, sectores o ideas de inversión, "
-        "analiza tu contexto y MENCIONA NOMBRES REALES de empresas conocidas que encajen con los criterios "
-        "del Value Investing (moat, buen management, etc.) a modo de ejemplo didáctico, advirtiendo siempre "
-        "que no es una recomendación de compra directa.\n\n"
+        "Tu filosofía de inversión se basa estrictamente en el 'Value Investing' de Warren Buffett "
+        "y en las enseñanzas de 'Invertir desde 0'. "
+        "INSTRUCCIONES DE FORMATO OBLIGATORIAS:\n"
+        "1. Sé extremadamente VISUAL. Utiliza tablas en formato Markdown siempre que puedas para comparar datos, métricas o empresas.\n"
+        "2. Usa listas con viñetas y texto en negrita para destacar conceptos clave.\n"
+        "3. Fundamenta siempre tu respuesta basándote EXCLUSIVAMENTE en el contexto proporcionado.\n"
+        "4. Si el usuario pide ejemplos, da nombres reales de empresas a modo didáctico, explicando por qué encajan con la filosofía Value, pero advirtiendo que no es una recomendación de compra.\n\n"
         "Contexto:\n{context}"
     )
 
@@ -79,12 +79,22 @@ def render_chatbot():
 
         # 2. Generar y mostrar la respuesta de la IA
         with st.chat_message("assistant"):
-            with st.spinner("Analizando con filosofía Value..."):
-                # Pedimos la respuesta a LangChain
+            with st.spinner("Analizando documentos e historial Value..."):
                 respuesta_obj = chatbot_chain.invoke({"input": pregunta})
                 texto_respuesta = respuesta_obj['answer']
                 
+                # Mostrar la respuesta visual (con tablas y negritas)
                 st.markdown(texto_respuesta)
+                
+                # Novedad: Extraer y mostrar las FUENTES en un desplegable
+                if "context" in respuesta_obj and len(respuesta_obj["context"]) > 0:
+                    with st.expander("📚 Ver documentos fuente utilizados"):
+                        for i, doc in enumerate(respuesta_obj["context"]):
+                            # Intentamos sacar el nombre del archivo de los metadatos
+                            origen = doc.metadata.get("source", "Documento local")
+                            st.caption(f"**Fuente {i+1}:** {origen}")
+                            # Mostramos un pequeño fragmento del texto original usado
+                            st.text(doc.page_content[:250] + "...")
                 
         # 3. Guardar la respuesta en el historial
         st.session_state.mensajes_ia.append({"rol": "assistant", "contenido": texto_respuesta})
