@@ -36,3 +36,8 @@ jobs:
           git add data/small_caps_oro.csv
           git commit -m "🤖 Minero automático: Nuevas Small Caps encontradas" || echo "No hubo cambios en los datos"
           git push
+
+      - name: 📦 Instalar librerías necesarias
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance pandas lxml html5lib requests
