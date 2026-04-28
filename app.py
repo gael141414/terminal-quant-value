@@ -49,6 +49,7 @@ from modulos.chatbot import render_chatbot
 from modulos.consejos import ejecutar_apartado_consejos
 from modulos.predictor import ejecutar_predictor_techos_suelos
 from modulos.minero_smallcaps import ejecutar_visor_smallcaps
+from modulos.utils import cargar_datos, calcular_score_buffett
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -326,14 +327,6 @@ def analizar_rotacion_sectores():
     return pd.DataFrame(datos) if datos else None
 
 # ---------------- DATA LOADER ---------------- #
-@st.cache_data(show_spinner=False)
-def cargar_datos(ticker: str, años: int):
-    try:
-        return obtener_estados_financieros(ticker, años, usar_cache=True)
-    except Exception as e:
-        st.error(f"Error descargando datos: {e}")
-        return None, None, None
-
 def obtener_transacciones_insiders(ticker):
     """Descarga las últimas compras/ventas de los directivos (Form 4)"""
     try:
@@ -423,49 +416,6 @@ def render_tradingview_widget(ticker):
     """
     # Renderizamos el HTML incrustado con una altura de 600 píxeles
     components.html(html_code, height=600)
-
-def calcular_score_buffett(df_is, df_bs, df_cf):
-    """Calcula una nota del 0 al 100 basada en las reglas estrictas de Buffett"""
-    score = 0
-    
-    def get_last(df, col):
-        if df is not None and col in df.columns:
-            s = df[col].dropna()
-            return s.iloc[-1] if not s.empty else None
-        return None
-
-    mb = get_last(df_is, "Margen Bruto %")
-    mn = get_last(df_is, "Margen Neto %")
-    roe = get_last(df_bs, "ROE %")
-    roic = get_last(df_bs, "ROIC %")
-    deuda = get_last(df_bs, "Deuda / Capital")
-    capex = get_last(df_cf, "CAPEX % sobre Beneficio")
-    fcf = get_last(df_cf, "Free Cash Flow (B USD)")
-    buybacks = get_last(df_cf, "Recompras (B USD)")
-
-    # 1. Poder de Precios (25 pts)
-    if mb and mb > 40: score += 10
-    elif mb and mb > 20: score += 5
-    if mn and mn > 20: score += 15
-    elif mn and mn > 10: score += 7
-
-    # 2. Eficiencia (30 pts)
-    if roe and roe > 15: score += 15
-    if roic and roic > 15: score += 15
-
-    # 3. Solidez (25 pts)
-    if deuda is not None and deuda < 0.8: score += 15
-    elif deuda is not None and deuda < 1.5: score += 7
-    if capex is not None and capex < 25: score += 10
-    elif capex is not None and capex < 50: score += 5
-
-    # 4. Trato al Accionista (20 pts)
-    if fcf and fcf > 0: score += 10
-    if buybacks and buybacks > 0: score += 10
-
-    return score
-
-import streamlit.components.v1 as components
 
 def renderizar_grafico_tradingview(ticker):
     """Inyecta el widget avanzado y nativo de TradingView interactivo"""
