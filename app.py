@@ -50,6 +50,7 @@ from modulos.consejos import ejecutar_apartado_consejos
 from modulos.predictor import ejecutar_predictor_techos_suelos
 from modulos.minero_smallcaps import ejecutar_visor_smallcaps
 from modulos.utils import cargar_datos, calcular_score_buffett
+from modulos.gurus import ejecutar_visor_gurus
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -799,7 +800,8 @@ with st.sidebar:
         "🩻 Radiografía de ETFs (X-Ray)",
         "🌐 Escáner Global (Screener)",
         "🤖 Robo-Advisor & Test Perfil",
-        "🤖 Chatbot Inversor"
+        "🤖 Chatbot Inversor",
+        "🎓 Visor de Gurús (Estrategias)"
     ], label_visibility="collapsed")
 
     st.markdown("---")
@@ -1002,6 +1004,9 @@ else:
 
     elif seccion_actual == "🛡️ Radar de Coberturas (Hedging)":
         ejecutar_radar_coberturas(ticker_input)
+
+    elif seccion_actual == "🎓 Visor de Gurús (Estrategias)":
+    ejecutar_visor_gurus(ticker_input, res_is, res_bs, res_cf, res_val)
                            
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
