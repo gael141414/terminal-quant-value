@@ -1030,7 +1030,7 @@ else:
         ejecutar_radar_macro(ticker_input, ticker_competidor, df_sectores)
         
     elif seccion_actual == "🧠 Auditoría Forense":
-        ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val)
+        ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val, res_bs)
 
     elif seccion_actual == "🔭 Predictor de Techos/Suelos":
         ejecutar_predictor_techos_suelos(ticker_input)
