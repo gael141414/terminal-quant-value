@@ -24,7 +24,8 @@ from charts import (
     plot_radar_comparativo,
     plot_comparativa_historica,
     plot_football_field,
-    plot_proyeccion_dividendos
+    plot_proyeccion_dividendos,
+    plot_per_bands
 )
 
 def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res_bs, res_cf, res_val, nota_final, ticker_competidor):
@@ -287,6 +288,17 @@ def ejecutar_analisis_fundamental(ticker_input, is_df, bs_df, cf_df, res_is, res
                 except: pass
         else:
             st.info("No se pudo calcular el EV/FCF por falta de datos de acciones en circulación.")
+
+        st.markdown("---")
+        st.markdown("#### ⏳ Fair Value Timeline (Bandas de PER Históricas)")
+        st.caption("La reversión a la media en estado puro. Comprar cuando la línea del precio toca la banda inferior (pesimismo) e ignorar la acción cuando toca la banda superior (euforia).")
+    
+        with st.spinner("Construyendo el túnel de valoración histórica..."):
+            fig_per = plot_per_bands(ticker_input)
+            if fig_per:
+                st.plotly_chart(fig_per, use_container_width=True)
+            else:
+                st.info("No hay suficientes datos históricos ininterrumpidos de beneficios para dibujar las bandas de valoración.")
 
     st.markdown("#### 🔎 Calidad del Beneficio (Filtro Anti-Fraude)")
     st.caption("Si la barra azul (Beneficio) es sistemáticamente mayor que la verde (Caja), la empresa no está cobrando lo que vende o maquilla sus cuentas.")
