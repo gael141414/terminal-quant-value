@@ -5,7 +5,7 @@ import numpy as np
 from charts import plot_beneish_m_score, plot_auditoria_forense
 from modulos.utils import analizar_sentimiento_noticias
 
-def ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val):
+def ejecutar_auditoria_forense(ticker_input, is_df, bs_df, cf_df, res_val, res_bs):
     """Detector de manipulación contable y riesgo de quiebra (Altman Z-Score y Beneish M-Score)"""
 
     st.markdown("#### ⚖️ Salud del Balance (Termómetro de Deuda)")
