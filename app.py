@@ -1006,7 +1006,7 @@ else:
         ejecutar_radar_coberturas(ticker_input)
 
     elif seccion_actual == "🎓 Visor de Gurús (Estrategias)":
-    ejecutar_visor_gurus(ticker_input, res_is, res_bs, res_cf, res_val)
+        ejecutar_visor_gurus(ticker_input, res_is, res_bs, res_cf, res_val)
                            
 # ==========================================
 # 🤖 CHATBOT QUANTITATIVO (COPILOTO IA)
