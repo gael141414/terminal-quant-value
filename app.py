@@ -919,7 +919,7 @@ herramientas_independientes = [
     "🤖 Robo-Advisor & Test Perfil", 
     "🌐 Escáner Global (Screener)", 
     "🩻 Radiografía de ETFs (X-Ray)",
-    "🕰️ Reloj Económico (Regímenes)"
+    "🕰️ Reloj Económico (Regímenes)",
     "🚰 Monitor de Liquidez (FED)",
     "🤖 Chatbot Inversor",
     "💡 Consejos y Mentoría",
