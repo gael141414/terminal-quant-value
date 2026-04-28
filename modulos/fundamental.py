@@ -9,8 +9,7 @@ from income_analyzer import analizar_cuenta_resultados
 from balance_analyzer import analizar_balance
 from cashflow_analyzer import analizar_flujo_efectivo
 from valuator import valorar_empresa
-from modulos.utils import obtener_valoracion_sectorial
-from modulos.utils import calcular_score_buffett
+from modulos.utils import obtener_valoracion_sectorial, cargar_datos, calcular_score_buffett
 from charts import (
     plot_tsr_vs_sp500, 
     plot_dashboard_interactivo, 
