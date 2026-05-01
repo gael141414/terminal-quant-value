@@ -1381,3 +1381,83 @@ def plot_rotacion_sectorial(df_sectores):
         yaxis=dict(showgrid=False)
     )
     return fig
+
+def plot_visor_trend_following(ticker, period="1y"):
+    """Visor 1: EMAs (Tendencia) + MACD (Momentum) + RSI (Sobrecompra/Sobreventa)"""
+    try:
+        # 1. Descarga de datos
+        df = yf.download(ticker, period=period)
+        if df.empty or len(df) < 200:
+            return None, None
+            
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.droplevel(1)
+
+        # 2. MATEMÁTICAS INSTITUCIONALES
+        # -- EMAs --
+        df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
+        df['EMA_200'] = df['Close'].ewm(span=200, adjust=False).mean()
+        
+        # -- MACD --
+        df['EMA_12'] = df['Close'].ewm(span=12, adjust=False).mean()
+        df['EMA_26'] = df['Close'].ewm(span=26, adjust=False).mean()
+        df['MACD'] = df['EMA_12'] - df['EMA_26']
+        df['Señal'] = df['MACD'].ewm(span=9, adjust=False).mean()
+        df['Histograma'] = df['MACD'] - df['Señal']
+        colores_hist = ['#00ff88' if val >= 0 else '#ff0055' for val in df['Histograma']]
+
+        # -- RSI (Fórmula suavizada de Wilder de 14 periodos) --
+        delta = df['Close'].diff()
+        gain = delta.where(delta > 0, 0.0)
+        loss = -delta.where(delta < 0, 0.0)
+        avg_gain = gain.ewm(alpha=1/14, adjust=False).mean()
+        avg_loss = loss.ewm(alpha=1/14, adjust=False).mean()
+        rs = avg_gain / avg_loss
+        df['RSI'] = 100 - (100 / (1 + rs))
+
+        # 3. CONSTRUCCIÓN DEL GRÁFICO TRIPLE (Subplots)
+        fig = make_subplots(
+            rows=3, cols=1, 
+            shared_xaxes=True, 
+            vertical_spacing=0.04, 
+            row_heights=[0.5, 0.25, 0.25], # Proporciones de las pantallas
+            subplot_titles=("Precio y Tendencia (EMAs)", "Momentum (MACD)", "Fuerza Relativa (RSI)")
+        )
+
+        # --- PANEL 1: PRECIO Y EMAs ---
+        fig.add_trace(go.Candlestick(
+            x=df.index, open=df['Open'], high=df['High'], 
+            low=df['Low'], close=df['Close'], name='Precio'
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['EMA_50'], line=dict(color='#00C0F2', width=2), name='EMA 50'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['EMA_200'], line=dict(color='#ff9900', width=2), name='EMA 200'), row=1, col=1)
+
+        # --- PANEL 2: MACD ---
+        fig.add_trace(go.Bar(x=df.index, y=df['Histograma'], marker_color=colores_hist, name='Fuerza'), row=2, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['MACD'], line=dict(color='#00C0F2', width=1.5), name='MACD'), row=2, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['Señal'], line=dict(color='#ff9900', width=1.5, dash='dot'), name='Señal'), row=2, col=1)
+
+        # --- PANEL 3: RSI ---
+        fig.add_trace(go.Scatter(x=df.index, y=df['RSI'], line=dict(color='#b58900', width=1.5), name='RSI'), row=3, col=1)
+        # Líneas de sobrecompra (70) y sobreventa (30)
+        fig.add_hline(y=70, line_dash="dash", line_color="#ff0055", opacity=0.5, row=3, col=1)
+        fig.add_hline(y=30, line_dash="dash", line_color="#00ff88", opacity=0.5, row=3, col=1)
+        # Sombreado interno del RSI (Opcional pero muy pro)
+        fig.add_hrect(y0=30, y1=70, fillcolor="white", opacity=0.05, layer="below", line_width=0, row=3, col=1)
+
+        # 4. ESTÉTICA FINTECH
+        fig.update_layout(
+            height=800, template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0),
+            xaxis_rangeslider_visible=False,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig.update_xaxes(rangeslider_visible=False, gridcolor="rgba(255,255,255,0.05)")
+        fig.update_yaxes(gridcolor="rgba(255,255,255,0.05)")
+        # Forzar el rango del RSI de 0 a 100
+        fig.update_yaxes(range=[0, 100], row=3, col=1)
+
+        return fig, df
+    except Exception as e:
+        return None, None
