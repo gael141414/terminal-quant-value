@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit.components.v1 as components
 
 # Importamos las herramientas de gráficos y utilidades
-from charts import plot_flujo_opciones, plot_visor_trend_following, plot_visor_breakout_volatilidad, plot_visor_reversion_media
+from charts import plot_flujo_opciones, plot_visor_trend_following, plot_visor_breakout_volatilidad, plot_visor_reversion_media, plot_visor_ichimoku
 from modulos.utils import obtener_datos_directiva, obtener_transacciones_insiders
 
 # -------------------------------------------------------------------
@@ -259,8 +259,85 @@ def ejecutar_tecnico_y_opciones(ticker_input):
                     st.info("⏳ **SIN SEÑAL CLARA:** El precio no está en un extremo estadístico lo suficientemente violento como para justificar una operación de reversión a la media.")
             else:
                 st.warning("Datos insuficientes para calcular las desviaciones de reversión.")
+    
     elif "Visor 4" in visor_seleccionado:
-        st.info("🚧 Visor Ichimoku Cloud en construcción...")
+        st.markdown("#### 🏯 Sistema Ichimoku (Equilibrio y Soportes Futuros)")
+        st.caption("Un ecosistema holístico. Si el precio está por encima de la Nube (Kumo), estamos en territorio alcista seguro. Comprueba los cruces de las líneas Tenkan y Kijun para el 'Timing' de entrada, y vigila que el Flujo Institucional (OBV) acompañe la subida.")
+        
+        with st.spinner("Proyectando soportes y resistencias 26 días en el futuro..."):
+            fig_ichi, df_ichi = plot_visor_ichimoku(ticker_input, period="1y")
+            
+            if fig_ichi is not None and df_ichi is not None:
+                st.plotly_chart(fig_ichi, use_container_width=True)
+                
+                # --- LECTOR DE SEÑALES INTELIGENTE ---
+                st.markdown("##### 🤖 Veredicto Algorítmico del Visor")
+                
+                ultimo = df_ichi.iloc[-1]
+                ayer = df_ichi.iloc[-2]
+                
+                c1, c2, c3 = st.columns(3)
+                
+                # 1. El Precio vs La Nube (Tendencia Macro)
+                with c1:
+                    st.markdown("**1. Filtro de la Nube (Kumo)**")
+                    nube_superior = max(ultimo['Senkou_A'], ultimo['Senkou_B'])
+                    nube_inferior = min(ultimo['Senkou_A'], ultimo['Senkou_B'])
+                    
+                    if ultimo['Close'] > nube_superior:
+                        st.success("🟢 **Alcista Fuerte:** El precio navega por encima de la Nube. Cielos despejados para comprar.")
+                        kumo_ok = True
+                    elif ultimo['Close'] < nube_inferior:
+                        st.error("🔴 **Bajista Fuerte:** El precio está hundido bajo la Nube. Prohibido operar en largo.")
+                        kumo_ok = False
+                    else:
+                        st.warning("⚡ **Zona de Turbulencia:** El precio está dentro de la Nube. Consolidación e incertidumbre. No operar.")
+                        kumo_ok = False
+
+                # 2. Cruces de Conversión vs Base (Gatillo)
+                with c2:
+                    st.markdown("**2. Timing (Tenkan vs Kijun)**")
+                    cruce_alcista = ultimo['Tenkan'] > ultimo['Kijun'] and ayer['Tenkan'] <= ayer['Kijun']
+                    cruce_bajista = ultimo['Tenkan'] < ultimo['Kijun'] and ayer['Tenkan'] >= ayer['Kijun']
+                    
+                    if cruce_alcista:
+                        st.success("🚀 **Señal Fresca:** Línea rápida (Azul) acaba de cruzar al alza la línea base (Naranja).")
+                        cruces_ok = True
+                    elif ultimo['Tenkan'] > ultimo['Kijun']:
+                        st.info("🟢 **Momento Positivo:** Línea rápida sigue liderando por encima de la base.")
+                        cruces_ok = True
+                    elif cruce_bajista:
+                        st.error("🩸 **Corte Bajista:** Línea rápida cruzando a la baja. Cierre de posiciones.")
+                        cruces_ok = False
+                    else:
+                        st.warning("🔴 **Momento Negativo:** Línea rápida por debajo de la base.")
+                        cruces_ok = False
+
+                # 3. Flujo Institucional (OBV)
+                with c3:
+                    st.markdown("**3. Confirmación Institucional**")
+                    if ultimo['OBV'] > ultimo['OBV_EMA'] and ayer['OBV'] <= ayer['OBV_EMA']:
+                        st.success("💰 **Entrada de Capital:** OBV cruzando su media al alza. Instituciones inyectando dinero.")
+                        obv_ok = True
+                    elif ultimo['OBV'] > ultimo['OBV_EMA']:
+                        st.info("📈 **Acumulación:** Flujo de dinero constante y respaldando el movimiento.")
+                        obv_ok = True
+                    else:
+                        st.error("📉 **Distribución (Riesgo):** Las instituciones están descargando acciones. El volumen no acompaña al precio.")
+                        obv_ok = False
+
+                # --- SÍNTESIS FINAL DE LA ESTRATEGIA ---
+                st.markdown("---")
+                if kumo_ok and cruces_ok and obv_ok:
+                    st.success("✅ **CONFLUENCIA JAPONESA (SEÑAL FUERTE):** Cielos despejados por encima de la nube, las líneas rápidas lideran la subida y el volumen confirma que es dinero real, no minorista. Gatillo de compra habilitado.")
+                elif kumo_ok and cruces_ok and not obv_ok:
+                    st.warning("⚠️ **DIVERGENCIA DE VOLUMEN:** El sistema Ichimoku da compra fuerte, pero las instituciones están sacando dinero (OBV cayendo). Podría ser una trampa alcista (Bull Trap).")
+                elif not kumo_ok:
+                    st.info("⏳ **ZONA DE EXCLUSIÓN:** Mientras el precio no escape de la Nube (hacia arriba), la estrategia japonesa exige estricta paciencia.")
+                else:
+                    st.info("〰️ **MERCADO MIXTO:** No hay confluencia clara entre la tendencia macro (Nube) y el momentum a corto plazo. ")
+            else:
+                st.warning("Datos insuficientes para dibujar el Ichimoku Cloud.")
 
     # ==========================================================
     # 3. MERCADO DE OPCIONES Y DERIVADOS (TU CÓDIGO ORIGINAL)
