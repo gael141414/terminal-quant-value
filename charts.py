@@ -1553,3 +1553,104 @@ def plot_visor_breakout_volatilidad(ticker, period="1y"):
         return fig, df
     except Exception as e:
         return None, None
+
+def plot_visor_reversion_media(ticker, period="1y"):
+    """Visor 3: Reversión a la Media (Z-Score + StochRSI + Bollinger)"""
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        import yfinance as yf
+        import pandas as pd
+        import numpy as np
+        
+        # 1. Descarga de datos
+        df = yf.download(ticker, period=period)
+        if df.empty or len(df) < 50:
+            return None, None
+            
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.droplevel(1)
+
+        # 2. MATEMÁTICAS DE REVERSIÓN
+        # -- Medias y Bandas (El Imán del Precio) --
+        df['SMA_20'] = df['Close'].rolling(window=20).mean()
+        df['STD_20'] = df['Close'].rolling(window=20).std()
+        df['BB_Up'] = df['SMA_20'] + (df['STD_20'] * 2.0)
+        df['BB_Low'] = df['SMA_20'] - (df['STD_20'] * 2.0)
+
+        # -- Z-Score (Tensión de la Goma Elástica) --
+        # Cuántas desviaciones estándar se ha alejado el precio de la media
+        df['Z_Score'] = (df['Close'] - df['SMA_20']) / df['STD_20']
+        
+        # Colores del Z-Score (Pánico = Verde, Euforia = Rojo, Normal = Azul)
+        colores_z = []
+        for z in df['Z_Score']:
+            if z <= -2: colores_z.append('#00ff88') # Pánico / Sobrevendido
+            elif z >= 2: colores_z.append('#ff0055') # Euforia / Sobrecomprado
+            else: colores_z.append('#4a5b7d') # Zona neutral
+
+        # -- StochRSI (El Gatillo Rápido) --
+        # 1. Calculamos RSI clásico
+        delta = df['Close'].diff()
+        gain = delta.where(delta > 0, 0.0)
+        loss = -delta.where(delta < 0, 0.0)
+        avg_gain = gain.ewm(alpha=1/14, adjust=False).mean()
+        avg_loss = loss.ewm(alpha=1/14, adjust=False).mean()
+        rs = avg_gain / avg_loss
+        df['RSI'] = 100 - (100 / (1 + rs))
+        
+        # 2. Calculamos Estocástico del RSI
+        rolling_min = df['RSI'].rolling(window=14).min()
+        rolling_max = df['RSI'].rolling(window=14).max()
+        # Evitamos divisiones por cero
+        rango = rolling_max - rolling_min
+        rango = rango.replace(0, 1e-10) 
+        
+        df['StochRSI'] = ((df['RSI'] - rolling_min) / rango) * 100
+        df['Stoch_K'] = df['StochRSI'].rolling(window=3).mean() # Línea rápida
+        df['Stoch_D'] = df['Stoch_K'].rolling(window=3).mean()  # Línea lenta de señal
+
+        # 3. CONSTRUCCIÓN DEL GRÁFICO (3 Paneles)
+        fig = make_subplots(
+            rows=3, cols=1, 
+            shared_xaxes=True, 
+            vertical_spacing=0.04, 
+            row_heights=[0.5, 0.25, 0.25],
+            subplot_titles=("Precio e Imán (SMA 20 + Bollinger)", "Tensión Extrema (Z-Score)", "Gatillo de Giro (StochRSI)")
+        )
+
+        # --- PANEL 1: PRECIO Y BOLLINGER ---
+        fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name='Precio'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['SMA_20'], line=dict(color='#ff9900', width=2), name='Media (El Imán)'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['BB_Up'], line=dict(color='rgba(0, 192, 242, 0.4)', width=1, dash='dash'), name='Banda Sup'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['BB_Low'], line=dict(color='rgba(0, 192, 242, 0.4)', width=1, dash='dash'), name='Banda Inf'), row=1, col=1)
+
+        # --- PANEL 2: Z-SCORE (DESVIACIÓN) ---
+        fig.add_trace(go.Bar(x=df.index, y=df['Z_Score'], marker_color=colores_z, name='Z-Score'), row=2, col=1)
+        # Líneas de extremo estadístico (+2 y -2 desviaciones)
+        fig.add_hline(y=2, line_dash="dot", line_color="#ff0055", row=2, col=1)
+        fig.add_hline(y=-2, line_dash="dot", line_color="#00ff88", row=2, col=1)
+
+        # --- PANEL 3: STOCHASTIC RSI ---
+        fig.add_trace(go.Scatter(x=df.index, y=df['Stoch_K'], line=dict(color='#00C0F2', width=1.5), name='%K (Rápida)'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['Stoch_D'], line=dict(color='#ff9900', width=1.5, dash='dot'), name='%D (Señal)'), row=3, col=1)
+        # Zonas de 80 y 20
+        fig.add_hline(y=80, line_dash="dash", line_color="#ff0055", opacity=0.5, row=3, col=1)
+        fig.add_hline(y=20, line_dash="dash", line_color="#00ff88", opacity=0.5, row=3, col=1)
+        fig.add_hrect(y0=20, y1=80, fillcolor="white", opacity=0.05, layer="below", line_width=0, row=3, col=1)
+
+        # 4. ESTÉTICA
+        fig.update_layout(
+            height=850, template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0), xaxis_rangeslider_visible=False,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig.update_xaxes(rangeslider_visible=False, gridcolor="rgba(255,255,255,0.05)")
+        fig.update_yaxes(gridcolor="rgba(255,255,255,0.05)")
+        # Forzar StochRSI entre 0 y 100
+        fig.update_yaxes(range=[0, 100], row=3, col=1)
+
+        return fig, df
+    except Exception as e:
+        return None, None
