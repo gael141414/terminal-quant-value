@@ -1461,3 +1461,95 @@ def plot_visor_trend_following(ticker, period="1y"):
         return fig, df
     except Exception as e:
         return None, None
+
+def plot_visor_breakout_volatilidad(ticker, period="1y"):
+    """Visor 2: Squeeze de Volatilidad (Bandas de Bollinger + Canales de Keltner + Volumen)"""
+    try:
+        import numpy as np
+        
+        # 1. Descarga de datos
+        df = yf.download(ticker, period=period)
+        if df.empty or len(df) < 50:
+            return None, None
+            
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.droplevel(1)
+
+        # 2. MATEMÁTICAS DE VOLATILIDAD
+        # -- Average True Range (ATR) de 20 periodos --
+        df['H-L'] = df['High'] - df['Low']
+        df['H-C'] = np.abs(df['High'] - df['Close'].shift(1))
+        df['L-C'] = np.abs(df['Low'] - df['Close'].shift(1))
+        df['TR'] = df[['H-L', 'H-C', 'L-C']].max(axis=1)
+        df['ATR'] = df['TR'].rolling(window=20).mean()
+
+        # -- Bandas de Bollinger (20, 2.0) --
+        df['SMA_20'] = df['Close'].rolling(window=20).mean()
+        df['STD_20'] = df['Close'].rolling(window=20).std()
+        df['BB_Up'] = df['SMA_20'] + (df['STD_20'] * 2.0)
+        df['BB_Low'] = df['SMA_20'] - (df['STD_20'] * 2.0)
+
+        # -- Canales de Keltner (20, 1.5) --
+        df['EMA_20'] = df['Close'].ewm(span=20, adjust=False).mean()
+        df['KC_Up'] = df['EMA_20'] + (df['ATR'] * 1.5)
+        df['KC_Low'] = df['EMA_20'] - (df['ATR'] * 1.5)
+
+        # -- Lógica del Squeeze (Compresión) --
+        # Hay "Squeeze" cuando las Bandas de Bollinger están completamente DENTRO de los Keltner
+        df['Squeeze_On'] = (df['BB_Low'] > df['KC_Low']) & (df['BB_Up'] < df['KC_Up'])
+        df['Squeeze_Off'] = ~df['Squeeze_On']
+        
+        # Puntos del Squeeze para el gráfico de momentum
+        colores_squeeze = ['#ff0055' if sqz else '#00ff88' for sqz in df['Squeeze_On']]
+
+        # -- Momentum proxy (Precio vs Media) --
+        df['Momentum'] = df['Close'] - df['SMA_20']
+        colores_mom = ['#00C0F2' if val > 0 else '#4a5b7d' for val in df['Momentum']]
+
+        # -- Volumen Inteligente --
+        colores_vol = ['#2ca02c' if row['Close'] >= row['Open'] else '#d62728' for _, row in df.iterrows()]
+        df['Vol_SMA'] = df['Volume'].rolling(window=20).mean()
+
+        # 3. CONSTRUCCIÓN DEL GRÁFICO (3 Paneles)
+        fig = make_subplots(
+            rows=3, cols=1, 
+            shared_xaxes=True, 
+            vertical_spacing=0.04, 
+            row_heights=[0.6, 0.2, 0.2],
+            subplot_titles=("Zonas de Compresión (Bollinger vs Keltner)", "Momentum Squeeze", "Volumen Institucional")
+        )
+
+        # --- PANEL 1: PRECIO, BOLLINGER Y KELTNER ---
+        fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name='Precio'), row=1, col=1)
+        
+        # Keltner Channels (Banda sombreada Naranja)
+        fig.add_trace(go.Scatter(x=df.index, y=df['KC_Up'], line=dict(color='rgba(255, 153, 0, 0.5)', width=1), showlegend=False), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['KC_Low'], line=dict(color='rgba(255, 153, 0, 0.5)', width=1), fill='tonexty', fillcolor='rgba(255, 153, 0, 0.05)', name='Keltner Channel'), row=1, col=1)
+        
+        # Bollinger Bands (Líneas Azules Dasheadas)
+        fig.add_trace(go.Scatter(x=df.index, y=df['BB_Up'], line=dict(color='#00C0F2', width=1.5, dash='dot'), name='Bollinger Up'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['BB_Low'], line=dict(color='#00C0F2', width=1.5, dash='dot'), name='Bollinger Low'), row=1, col=1)
+
+        # --- PANEL 2: MOMENTUM & SQUEEZE DOTS ---
+        # Histograma de momentum
+        fig.add_trace(go.Bar(x=df.index, y=df['Momentum'], marker_color=colores_mom, name='Momentum'), row=2, col=1)
+        # Línea de Squeeze (Puntos Rojos = Compresión, Verdes = Liberación)
+        fig.add_trace(go.Scatter(x=df.index, y=[0]*len(df), mode='markers', marker=dict(color=colores_squeeze, size=6), name='Estado Squeeze'), row=2, col=1)
+
+        # --- PANEL 3: VOLUMEN ---
+        fig.add_trace(go.Bar(x=df.index, y=df['Volume'], marker_color=colores_vol, name='Volumen'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['Vol_SMA'], line=dict(color='#e0e6ed', width=1.5), name='Media Volumen'), row=3, col=1)
+
+        # 4. ESTÉTICA FINTECH
+        fig.update_layout(
+            height=850, template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0), xaxis_rangeslider_visible=False,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig.update_xaxes(rangeslider_visible=False, gridcolor="rgba(255,255,255,0.05)")
+        fig.update_yaxes(gridcolor="rgba(255,255,255,0.05)")
+
+        return fig, df
+    except Exception as e:
+        return None, None
