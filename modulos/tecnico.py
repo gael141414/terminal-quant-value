@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit.components.v1 as components
 
 # Importamos las herramientas de gráficos y utilidades
-from charts import plot_flujo_opciones, plot_visor_trend_following, plot_visor_breakout_volatilidad
+from charts import plot_flujo_opciones, plot_visor_trend_following, plot_visor_breakout_volatilidad, plot_visor_reversion_media
 from modulos.utils import obtener_datos_directiva, obtener_transacciones_insiders
 
 # -------------------------------------------------------------------
@@ -57,7 +57,6 @@ def ejecutar_tecnico_y_opciones(ticker_input):
         horizontal=True
     )
     
-    # Lógica del Visor 1
     if "Visor 1" in visor_seleccionado:
         st.markdown("#### 🌊 Sistema de Seguimiento de Tendencias")
         st.caption("Filtra el ruido diario. Busca subir a olas institucionales confirmando que hay tendencia (EMAs), aceleración (MACD) y margen de subida (RSI < 70).")
@@ -186,8 +185,80 @@ def ejecutar_tecnico_y_opciones(ticker_input):
                     st.info("🤷‍♂️ **SIN SETUP CLARO:** El precio se está moviendo con normalidad. Este visor no detecta anomalías de volatilidad en este momento. Revisa el Visor 1 (Tendencia).")
             else:
                 st.warning("Datos insuficientes para calcular la volatilidad (Se requieren 50 sesiones).")
+    
     elif "Visor 3" in visor_seleccionado:
-        st.info("🚧 Visor de Reversión (VWAP + StochRSI) en construcción...")
+        st.markdown("#### 🧲 Sistema de Reversión a la Media (Swing Trading)")
+        st.caption("Aprovecha los extremos psicológicos. Busca el pánico irracional para comprar barato y la euforia desmedida para vender. El precio siempre tiende a volver a su media institucional (SMA 20).")
+        
+        with st.spinner("Calculando desviaciones estándar y StochRSI..."):
+            fig_rev, df_rev = plot_visor_reversion_media(ticker_input, period="1y")
+            
+            if fig_rev is not None and df_rev is not None:
+                st.plotly_chart(fig_rev, use_container_width=True)
+                
+                # --- LECTOR DE SEÑALES INTELIGENTE ---
+                st.markdown("##### 🤖 Veredicto Algorítmico del Visor")
+                
+                ultimo = df_rev.iloc[-1]
+                ayer = df_rev.iloc[-2]
+                
+                c1, c2, c3 = st.columns(3)
+                
+                # 1. Medición de Extremos (Z-Score)
+                with c1:
+                    st.markdown("**1. Tensión Estadística (Z-Score)**")
+                    z_actual = ultimo['Z_Score']
+                    if z_actual <= -2:
+                        st.success(f"🟢 **Pánico Extremo ({z_actual:.2f}):** El precio se ha hundido muy por debajo de su media. La goma elástica está tensada al máximo hacia abajo.")
+                        tension = "sobrevendido"
+                    elif z_actual >= 2:
+                        st.error(f"🔴 **Euforia Absoluta ({z_actual:.2f}):** El precio se ha disparado. Wall Street está irracionalmente optimista. Riesgo de caída inminente.")
+                        tension = "sobrecomprado"
+                    else:
+                        st.info(f"⚖️ **Zona Neutral ({z_actual:.2f}):** El precio orbita cerca de su media justa de 20 días.")
+                        tension = "neutral"
+
+                # 2. Timing de Giro (StochRSI)
+                with c2:
+                    st.markdown("**2. Aceleración del Giro (StochRSI)**")
+                    cruce_alcista_stoch = ultimo['Stoch_K'] > ultimo['Stoch_D'] and ayer['Stoch_K'] <= ayer['Stoch_D']
+                    cruce_bajista_stoch = ultimo['Stoch_K'] < ultimo['Stoch_D'] and ayer['Stoch_K'] >= ayer['Stoch_D']
+                    
+                    if cruce_alcista_stoch and ultimo['Stoch_K'] < 40:
+                        st.success("🚀 **Gatillo Alcista:** Oscilador cruzando al alza desde zona baja.")
+                        giro = "comprar"
+                    elif cruce_bajista_stoch and ultimo['Stoch_K'] > 60:
+                        st.error("🩸 **Gatillo Bajista:** Oscilador cruzando a la baja desde la cima.")
+                        giro = "vender"
+                    elif ultimo['Stoch_K'] < 20:
+                        st.info("📉 Agotamiento bajista. Esperando cruce.")
+                        giro = "esperar_compra"
+                    elif ultimo['Stoch_K'] > 80:
+                        st.info("📈 Agotamiento alcista. Esperando cruce.")
+                        giro = "esperar_venta"
+                    else:
+                        st.warning("〰️ Sin momento direccional claro.")
+                        giro = "neutral"
+
+                # 3. Margen de Beneficio
+                with c3:
+                    st.markdown("**3. Distancia a la Media**")
+                    distancia_pct = ((ultimo['SMA_20'] - ultimo['Close']) / ultimo['Close']) * 100
+                    if distancia_pct > 0:
+                        st.success(f"🎯 **Target Alcista:** Si el precio vuelve a la media (SMA 20), el margen de ganancia estimado es del **+{distancia_pct:.2f}%**.")
+                    else:
+                        st.error(f"📉 **Riesgo de Caída:** Si el precio revierte a la media, la corrección estimada sería del **{distancia_pct:.2f}%**.")
+
+                # --- SÍNTESIS FINAL DE LA ESTRATEGIA ---
+                st.markdown("---")
+                if tension == "sobrevendido" and (giro == "comprar" or giro == "esperar_compra"):
+                    st.success("✅ **SEÑAL DE SWING TRADING (COMPRA):** Máxima tensión bajista + giro detectado. Alta probabilidad matemática de que el precio 'rebote' hacia la línea naranja (SMA 20).")
+                elif tension == "sobrecomprado" and (giro == "vender" or giro == "esperar_venta"):
+                    st.error("🚨 **SEÑAL DE CORRECCIÓN INMINENTE (VENTA):** El mercado está sobrecalentado y el oscilador empieza a darse la vuelta. Es momento de asegurar ganancias, no de comprar.")
+                else:
+                    st.info("⏳ **SIN SEÑAL CLARA:** El precio no está en un extremo estadístico lo suficientemente violento como para justificar una operación de reversión a la media.")
+            else:
+                st.warning("Datos insuficientes para calcular las desviaciones de reversión.")
     elif "Visor 4" in visor_seleccionado:
         st.info("🚧 Visor Ichimoku Cloud en construcción...")
 
