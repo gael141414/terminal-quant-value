@@ -1654,3 +1654,108 @@ def plot_visor_reversion_media(ticker, period="1y"):
         return fig, df
     except Exception as e:
         return None, None
+
+def plot_visor_ichimoku(ticker, period="1y"):
+    """Visor 4: Sistema Holístico Ichimoku Cloud + Flujo de Volumen (OBV)"""
+    try:
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        import yfinance as yf
+        import pandas as pd
+        import numpy as np
+        
+        # 1. Descarga de datos
+        df = yf.download(ticker, period=period)
+        if df.empty or len(df) < 100:
+            return None, None
+            
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.droplevel(1)
+
+        # 2. PROYECCIÓN TEMPORAL (El secreto del Ichimoku)
+        # Añadimos 26 días laborables al futuro en nuestro DataFrame
+        ultimo_dia = df.index[-1]
+        fechas_futuras = pd.date_range(start=ultimo_dia + pd.Timedelta(days=1), periods=26, freq='B')
+        df = df.reindex(df.index.append(fechas_futuras))
+
+        # 3. MATEMÁTICAS ICHIMOKU
+        # -- Tenkan-sen (Línea de Conversión, 9 periodos) -- Rápida
+        high_9 = df['High'].rolling(window=9).max()
+        low_9 = df['Low'].rolling(window=9).min()
+        df['Tenkan'] = (high_9 + low_9) / 2
+
+        # -- Kijun-sen (Línea Base, 26 periodos) -- Lenta
+        high_26 = df['High'].rolling(window=26).max()
+        low_26 = df['Low'].rolling(window=26).min()
+        df['Kijun'] = (high_26 + low_26) / 2
+
+        # -- Senkou Span A (Límite de Nube 1) -- Proyectado 26 periodos al futuro
+        df['Senkou_A'] = ((df['Tenkan'] + df['Kijun']) / 2).shift(26)
+
+        # -- Senkou Span B (Límite de Nube 2, 52 periodos) -- Proyectado 26 periodos al futuro
+        high_52 = df['High'].rolling(window=52).max()
+        low_52 = df['Low'].rolling(window=52).min()
+        df['Senkou_B'] = ((high_52 + low_52) / 2).shift(26)
+
+        # -- Chikou Span (Línea Rezagada) -- Precio desplazado 26 periodos al pasado
+        df['Chikou'] = df['Close'].shift(-26)
+
+        # 4. MATEMÁTICAS DE VOLUMEN (On-Balance Volume - OBV)
+        # Suma volumen si el día es alcista, resta si es bajista.
+        diff = df['Close'].diff()
+        direction = np.sign(diff).fillna(0)
+        df['OBV'] = (df['Volume'] * direction).fillna(0).cumsum()
+        df['OBV_EMA'] = df['OBV'].ewm(span=20, adjust=False).mean()
+
+        # 5. CONSTRUCCIÓN DEL GRÁFICO (2 Paneles)
+        fig = make_subplots(
+            rows=2, cols=1, 
+            shared_xaxes=True, 
+            vertical_spacing=0.05, 
+            row_heights=[0.7, 0.3],
+            subplot_titles=("Ichimoku Kinko Hyo (La Nube de Equilibrio)", "Flujo de Dinero Institucional (OBV)")
+        )
+
+        # --- PANEL 1: ICHIMOKU CLOUD ---
+        # Velas (Ocultamos en el futuro donde no hay datos)
+        fig.add_trace(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name='Precio'), row=1, col=1)
+        
+        # Líneas Clave
+        fig.add_trace(go.Scatter(x=df.index, y=df['Tenkan'], line=dict(color='#00C0F2', width=1.5), name='Tenkan (Rápida)'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['Kijun'], line=dict(color='#ff9900', width=1.5), name='Kijun (Base)'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['Chikou'], line=dict(color='#b58900', width=1, dash='dot'), name='Chikou (Pasado)'), row=1, col=1)
+
+        # La Nube (Kumo) - Magia visual
+        # Para colorear la nube de verde o rojo según quién esté arriba (Span A o B), trazamos ambos y rellenamos entre ellos.
+        fig.add_trace(go.Scatter(x=df.index, y=df['Senkou_A'], line=dict(color='rgba(0, 255, 136, 0)'), showlegend=False), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df['Senkou_B'], 
+            line=dict(color='rgba(255, 0, 85, 0)'), 
+            fill='tonexty', 
+            fillcolor='rgba(128, 128, 128, 0.15)', # Relleno genérico, Plotly no permite rellenado condicional simple
+            name='Nube Futura (Kumo)'
+        ), row=1, col=1)
+        
+        # Repintamos las líneas de la nube para que se vean los bordes
+        fig.add_trace(go.Scatter(x=df.index, y=df['Senkou_A'], line=dict(color='#00ff88', width=1), name='Span A (Verde)'), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['Senkou_B'], line=dict(color='#ff0055', width=1), name='Span B (Roja)'), row=1, col=1)
+
+        # --- PANEL 2: OBV (Rastro del Dinero) ---
+        fig.add_trace(go.Scatter(x=df.index, y=df['OBV'], line=dict(color='#2ca02c', width=2), name='OBV'), row=2, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['OBV_EMA'], line=dict(color='#e0e6ed', width=1, dash='dash'), name='Media OBV'), row=2, col=1)
+
+        # 6. ESTÉTICA
+        fig.update_layout(
+            height=850, template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0), xaxis_rangeslider_visible=False,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig.update_xaxes(rangeslider_visible=False, gridcolor="rgba(255,255,255,0.05)")
+        fig.update_yaxes(gridcolor="rgba(255,255,255,0.05)")
+
+        # Devolvemos el df limpio de las fechas futuras para el análisis del Veredicto
+        df_limpio = df.dropna(subset=['Close'])
+        return fig, df_limpio
+    except Exception as e:
+        return None, None
