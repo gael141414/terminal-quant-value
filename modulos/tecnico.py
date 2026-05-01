@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit.components.v1 as components
 
 # Importamos las herramientas de gráficos y utilidades
-from charts import plot_flujo_opciones, plot_visor_trend_following
+from charts import plot_flujo_opciones, plot_visor_trend_following, plot_visor_breakout_volatilidad
 from modulos.utils import obtener_datos_directiva, obtener_transacciones_insiders
 
 # -------------------------------------------------------------------
@@ -120,7 +120,72 @@ def ejecutar_tecnico_y_opciones(ticker_input):
                 st.warning("No hay suficientes datos históricos para ejecutar este visor.")
 
     elif "Visor 2" in visor_seleccionado:
-        st.info("🚧 Visor de Breakout (Bandas Bollinger + Keltner) en construcción...")
+        st.markdown("#### 💥 Sistema de Breakout (Compresión de Volatilidad)")
+        st.caption("Detecta explosiones inminentes de precio. Busca momentos donde las Bandas de Bollinger se estrechan dentro de los Canales de Keltner (Squeeze), indicando que el dinero institucional está acumulando antes de un movimiento brusco.")
+        
+        with st.spinner("Midiendo desviación estándar y rangos de volatilidad..."):
+            fig_vol, df_vol = plot_visor_breakout_volatilidad(ticker_input, period="1y")
+            
+            if fig_vol is not None and df_vol is not None:
+                st.plotly_chart(fig_vol, use_container_width=True)
+                
+                # --- LECTOR DE SEÑALES INTELIGENTE ---
+                st.markdown("##### 🤖 Veredicto Algorítmico del Visor")
+                
+                ultimo = df_vol.iloc[-1]
+                ayer = df_vol.iloc[-2]
+                
+                c1, c2, c3 = st.columns(3)
+                
+                # 1. Estado de la Volatilidad (Squeeze)
+                with c1:
+                    st.markdown("**1. Estado de Compresión**")
+                    if ultimo['Squeeze_On']:
+                        st.error("🔴 **COMPRESIÓN MÁXIMA:** Las Bandas de Bollinger están dentro de Keltner. El mercado está comprimiendo energía como un muelle. Movimiento violento inminente.")
+                        squeeze_activo = True
+                    elif not ultimo['Squeeze_On'] and ayer['Squeeze_On']:
+                        st.success("🚀 **¡RUPTURA (SQUEEZE FIRED)!** El muelle acaba de saltar hoy. La volatilidad se ha liberado.")
+                        squeeze_activo = False
+                    else:
+                        st.info("🟢 **Expansión Normal:** El mercado está en fase de movimiento fluido. No hay acumulación latente.")
+                        squeeze_activo = False
+
+                # 2. Dirección del Movimiento (Momentum)
+                with c2:
+                    st.markdown("**2. Sesgo de Dirección**")
+                    if ultimo['Momentum'] > 0 and ultimo['Close'] > ultimo['SMA_20']:
+                        st.success("📈 **Sesgo Alcista:** El precio empuja por encima de la media móvil. Mayor probabilidad de que la ruptura sea hacia arriba.")
+                        sesgo = "alcista"
+                    elif ultimo['Momentum'] < 0 and ultimo['Close'] < ultimo['SMA_20']:
+                        st.error("📉 **Sesgo Bajista:** El precio pesa por debajo de la media móvil. Mayor probabilidad de desplome.")
+                        sesgo = "bajista"
+                    else:
+                        st.warning("⚖️ **Dirección Indecisa:** Momentum plano.")
+                        sesgo = "neutral"
+
+                # 3. Confirmación de Volumen
+                with c3:
+                    st.markdown("**3. Flujo Institucional (Volumen)**")
+                    if ultimo['Volume'] > ultimo['Vol_SMA'] * 1.5:
+                        st.success("🔥 **Volumen Extremo (>150% media):** ¡Dinero inteligente detectado! Si hay ruptura hoy, es muy fiable.")
+                        volumen_fuerte = True
+                    elif ultimo['Volume'] > ultimo['Vol_SMA']:
+                        st.info("📊 **Volumen Alto:** Presión institucional por encima de la media.")
+                        volumen_fuerte = True
+                    else:
+                        st.warning("🔇 **Volumen Bajo:** Movimientos con poco capital de respaldo. Riesgo de falsa ruptura (Fakeout).")
+                        volumen_fuerte = False
+
+                # --- SÍNTESIS FINAL DE LA ESTRATEGIA ---
+                st.markdown("---")
+                if not ultimo['Squeeze_On'] and ayer['Squeeze_On'] and volumen_fuerte:
+                    st.success(f"✅ **¡GATILLO DE BREAKOUT {sesgo.upper()}!** El sistema acaba de detectar la liberación de la volatilidad acompañada de fuerte volumen institucional. Punto de entrada óptimo.")
+                elif squeeze_activo:
+                    st.warning(f"⏳ **MODO ESPERA ACTIVO:** La acción está en extrema compresión con un sesgo **{sesgo}**. Prepara tus órdenes condicionadas. No operes hasta que las bandas rompan.")
+                else:
+                    st.info("🤷‍♂️ **SIN SETUP CLARO:** El precio se está moviendo con normalidad. Este visor no detecta anomalías de volatilidad en este momento. Revisa el Visor 1 (Tendencia).")
+            else:
+                st.warning("Datos insuficientes para calcular la volatilidad (Se requieren 50 sesiones).")
     elif "Visor 3" in visor_seleccionado:
         st.info("🚧 Visor de Reversión (VWAP + StochRSI) en construcción...")
     elif "Visor 4" in visor_seleccionado:
