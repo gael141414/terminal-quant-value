@@ -51,6 +51,7 @@ from modulos.predictor import ejecutar_predictor_techos_suelos
 from modulos.minero_smallcaps import ejecutar_visor_smallcaps
 from modulos.utils import cargar_datos, calcular_score_buffett
 from modulos.gurus import ejecutar_visor_gurus
+from modulos.watchlist import ejecutar_watchlist
 
 genai.configure(api_key="AIzaSyAcKJlq_hy1TdaX19ioPIzkYKvYWiUZYh4")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -782,6 +783,7 @@ with st.sidebar:
     
     seccion_actual = st.radio("Ir a:", [
         "📊 Resumen Ejecutivo",
+        "📋 Mi Watchlist (Cartera)",
         "🔎 Análisis Fundamental",
         "📈 Técnico y Opciones",
         "🌍 Radar Macro y Sectores",
@@ -868,6 +870,7 @@ with st.sidebar:
 # ---------------------------------------------------------
 
 herramientas_independientes = [
+    "📋 Mi Watchlist (Cartera)",
     "🤖 Robo-Advisor & Test Perfil", 
     "🌐 Escáner Global (Screener)", 
     "🩻 Radiografía de ETFs (X-Ray)",
@@ -887,6 +890,9 @@ if seccion_actual in herramientas_independientes:
 
     if seccion_actual == "🕰️ Reloj Económico (Regímenes)":
         ejecutar_reloj_macro()
+
+    elif seccion_actual == "📋 Mi Watchlist (Cartera)":
+        ejecutar_watchlist()
         
     elif seccion_actual == "🤖 Robo-Advisor & Test Perfil":
         ejecutar_roboadvisor()
