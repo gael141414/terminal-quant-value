@@ -70,7 +70,7 @@ def ejecutar_watchlist():
     st.markdown("---")
 
     # -------------------------------------------------------------
-    # 2. MOTOR DE DATOS (Extracción en Tiempo Real)
+    # 2. MOTOR DE DATOS (Extracción Ultra-Robusta)
     # -------------------------------------------------------------
     if not db:
         st.info("Tu Watchlist está vacía. Despliega el menú de arriba para añadir tu primera acción.")
@@ -78,71 +78,69 @@ def ejecutar_watchlist():
 
     with st.spinner("Sincronizando precios en tiempo real con Wall Street..."):
         tickers_list = list(db.keys())
-        # Descargamos los datos de todos los tickers de golpe (más eficiente)
-        try:
-            # yf.download falla si es un solo ticker y usamos group_by, así que hacemos un truco
-            data_yf = yf.download(tickers_list, period="2d", progress=False)
-            
-            resultados = []
-            
-            for ticker in tickers_list:
-                try:
-                    # Lógica para extraer datos dependiendo de si es 1 o varios tickers
-                    if len(tickers_list) == 1:
-                        cierres = data_yf['Close']
-                    else:
-                        cierres = data_yf['Close'][ticker]
-                        
-                    cierres = cierres.dropna()
+        resultados = []
+        
+        for ticker in tickers_list:
+            try:
+                # Descargamos 5 días para asegurar que salvamos fines de semana y festivos
+                tk = yf.Ticker(ticker)
+                hist = tk.history(period="5d")
+                
+                if not hist.empty and len(hist) >= 2:
+                    precio_actual = float(hist['Close'].iloc[-1])
+                    precio_ayer = float(hist['Close'].iloc[-2])
+                    cambio_pct = ((precio_actual - precio_ayer) / precio_ayer) * 100
+                else:
+                    # Plan B: Fast Info (Si la historia falla)
+                    precio_actual = float(tk.fast_info.last_price)
+                    precio_ayer = float(tk.fast_info.previous_close)
+                    cambio_pct = ((precio_actual - precio_ayer) / precio_ayer) * 100
                     
-                    if len(cierres) >= 2:
-                        precio_actual = cierres.iloc[-1]
-                        precio_ayer = cierres.iloc[-2]
-                        cambio_pct = ((precio_actual - precio_ayer) / precio_ayer) * 100
-                    else:
-                        # Fallback si no hay datos de ayer
-                        info = yf.Ticker(ticker).fast_info
-                        precio_actual = info.last_price
-                        cambio_pct = 0.0
-
-                    target = db[ticker]["target"]
-                    distancia = 0
+                target = float(db[ticker].get("target", 0))
+                
+                # Calcular alertas matemáticas
+                if target > 0:
+                    distancia = ((precio_actual - target) / target) * 100
+                    alerta = "✅ EN PRECIO" if precio_actual <= target else f"A un -{distancia:.1f}% de caer"
+                else:
+                    alerta = "Sin Target"
                     
-                    # Calcular distancia al precio objetivo
-                    if target > 0:
-                        distancia = ((precio_actual - target) / target) * 100
-                        alerta = "✅ EN PRECIO" if precio_actual <= target else f"A un -{distancia:.1f}% de caer"
-                    else:
-                        alerta = "Sin Target"
-                        
-                    resultados.append({
-                        "Ticker": ticker,
-                        "Precio Actual": float(precio_actual),
-                        "Var Diaria (%)": float(cambio_pct),
-                        "Precio Objetivo": float(target) if target > 0 else "-",
-                        "Distancia al Target": alerta
-                    })
-                except Exception as e:
-                    pass # Ignoramos tickers rotos temporalmente
-                    
-            df_watch = pd.DataFrame(resultados)
-        except Exception as e:
-            st.error(f"Error conectando con Yahoo Finance: {e}")
-            return
+                resultados.append({
+                    "Ticker": ticker,
+                    "Precio Actual": precio_actual,
+                    "Var Diaria (%)": cambio_pct,
+                    "Precio Objetivo": target if target > 0 else "-",
+                    "Distancia al Target": alerta
+                })
+                
+            except Exception as e:
+                # Si algo falla, lo registramos en la tabla en lugar de ocultarlo
+                resultados.append({
+                    "Ticker": ticker,
+                    "Precio Actual": 0.0,
+                    "Var Diaria (%)": 0.0,
+                    "Precio Objetivo": db[ticker].get("target", 0),
+                    "Distancia al Target": f"⚠️ Error de datos"
+                })
+                
+        df_watch = pd.DataFrame(resultados)
 
     # -------------------------------------------------------------
     # 3. VISUALIZACIÓN (Dashboard)
     # -------------------------------------------------------------
     if not df_watch.empty:
-        # KPIs Rápidos
-        mejor = df_watch.loc[df_watch['Var Diaria (%)'].idxmax()]
-        peor = df_watch.loc[df_watch['Var Diaria (%)'].idxmin()]
-        
-        c_kpi1, c_kpi2, c_kpi3 = st.columns(3)
-        c_kpi1.metric("Activos en Seguimiento", len(df_watch))
-        c_kpi2.metric("🚀 Líder del Día", f"{mejor['Ticker']}", f"{mejor['Var Diaria (%)']:.2f}%")
-        c_kpi3.metric("🩸 Rezago del Día", f"{peor['Ticker']}", f"{peor['Var Diaria (%)']:.2f}%", delta_color="inverse")
-        
+        # KPIs Rápidos (Protegidos contra divisiones por cero o errores en la carga)
+        try:
+            mejor = df_watch.loc[df_watch['Var Diaria (%)'].idxmax()]
+            peor = df_watch.loc[df_watch['Var Diaria (%)'].idxmin()]
+            
+            c_kpi1, c_kpi2, c_kpi3 = st.columns(3)
+            c_kpi1.metric("Activos en Seguimiento", len(df_watch))
+            c_kpi2.metric("🚀 Líder del Día", f"{mejor['Ticker']}", f"{mejor['Var Diaria (%)']:.2f}%")
+            c_kpi3.metric("🩸 Rezago del Día", f"{peor['Ticker']}", f"{peor['Var Diaria (%)']:.2f}%", delta_color="inverse")
+        except:
+            st.metric("Activos en Seguimiento", len(df_watch))
+            
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Tabla interactiva con formato
@@ -150,8 +148,8 @@ def ejecutar_watchlist():
             df_watch.style.format({
                 "Precio Actual": "${:.2f}",
                 "Var Diaria (%)": "{:+.2f}%",
-                "Precio Objetivo": "${:.2f}"
-            }).map(lambda val: 'color: #00ff88; font-weight:bold;' if val > 0 else 'color: #ff0055; font-weight:bold;', subset=['Var Diaria (%)']),
+                "Precio Objetivo": lambda x: f"${x:.2f}" if isinstance(x, (int, float)) and x > 0 else "-"
+            }).map(lambda val: 'color: #00ff88; font-weight:bold;' if val > 0 else ('color: #ff0055; font-weight:bold;' if val < 0 else ''), subset=['Var Diaria (%)']),
             use_container_width=True,
             hide_index=True
         )
